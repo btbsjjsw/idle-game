@@ -832,28 +832,119 @@ function updateHPBar() {
 }
 
 // 升级点击伤害
-function upgradeClick() {
-    const cost = Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
-    if (gameState.gold >= cost) {
-        gameState.gold -= cost;
-        gameState.clickLevel++;
+// ===== 批量升级点击伤害 =====
+function upgradeClick(multiplier = '1') {
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordable('click') : parseInt(multiplier);
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    let actualUpgrades = 0;
+    
+    for (let i = 0; i < maxUpgrades; i++) {
+        const cost = Math.floor(10 * Math.pow(gameState.clickLevel + i, 1.5));
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            actualUpgrades++;
+        } else {
+            break;
+        }
+    }
+    
+    if (actualUpgrades > 0) {
+        gameState.gold -= totalCost;
+        gameState.clickLevel += actualUpgrades;
         gameState.clickDamage = gameState.clickLevel;
-        showNotification('点击伤害提升!');
+        showNotification(`⚔️ 点击伤害 +${actualUpgrades} (共 ${gameState.clickLevel} 级)`);
         updateDisplay();
         saveGame();
+    } else {
+        showNotification('金币不足!');
     }
 }
 
-// 升级秒伤
-function upgradeDPS() {
-    const cost = Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
-    if (gameState.gold >= cost) {
-        gameState.gold -= cost;
-        gameState.dpsLevel++;
-        showNotification('每秒伤害提升!');
+// ===== 批量升级秒伤 =====
+function upgradeDPS(multiplier = '1') {
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordable('dps') : parseInt(multiplier);
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    let actualUpgrades = 0;
+    
+    for (let i = 0; i < maxUpgrades; i++) {
+        const cost = Math.floor(10 * Math.pow(gameState.dpsLevel + i, 1.5));
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            actualUpgrades++;
+        } else {
+            break;
+        }
+    }
+    
+    if (actualUpgrades > 0) {
+        gameState.gold -= totalCost;
+        gameState.dpsLevel += actualUpgrades;
+        showNotification(`⚔️ 秒伤 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
         saveGame();
+    } else {
+        showNotification('金币不足!');
     }
+}
+
+// ===== 获取可购买的 最大数量 =====
+function getMaxAffordable(type) {
+    let level = type === 'click' ? gameState.clickLevel : gameState.dpsLevel;
+    let count = 0;
+    
+    while (count < 10000) {
+        const cost = Math.floor(10 * Math.pow(level + count, 1.5));
+        if (gameState.gold >= cost) {
+            level++;
+            count++;
+        } else {
+            break;
+        }
+    }
+    return count;
+}
+
+// ===== 更新升级费用显示 =====
+function updateUpgradeCosts() {
+    const multiplier = document.getElementById('upgradeMultiplier').value;
+    let clickCost, dpsCost;
+    
+    if (multiplier === 'max') {
+        const maxClick = getMaxAffordable('click');
+        const maxDps = getMaxAffordable('dps');
+        
+        let clickTotal = 0, lvl = gameState.clickLevel;
+        for (let i = 0; i < maxClick; i++) clickTotal += Math.floor(10 * Math.pow(lvl + i, 1.5));
+        
+        let dpsTotal = 0, lvl2 = gameState.dpsLevel;
+        for (let i = 0; i < maxDps; i++) dpsTotal += Math.floor(10 * Math.pow(lvl2 + i, 1.5));
+        
+        clickCost = formatNumber(clickTotal);
+        dpsCost = formatNumber(dpsTotal);
+    } else {
+        const count = parseInt(multiplier);
+        let clickTotal = 0, lvl = gameState.clickLevel;
+        for (let i = 0; i < count; i++) clickTotal += Math.floor(10 * Math.pow(lvl + i, 1.5));
+        
+        let dpsTotal = 0, lvl2 = gameState.dpsLevel;
+        for (let i = 0; i < count; i++) dpsTotal += Math.floor(10 * Math.pow(lvl2 + i, 1.5));
+        
+        clickCost = formatNumber(clickTotal);
+        dpsCost = formatNumber(dpsTotal);
+    }
+    
+    document.getElementById('clickCost').textContent = clickCost;
+    document.getElementById('dpsCost').textContent = dpsCost;
 }
 
 // 自动攻击（DPS）
@@ -1146,7 +1237,15 @@ function renderArtifacts() {
         }
         
         const level = gameState.artifacts[artifact.id] || 0;
-        const upgradeCost = getArtifactUpgradeCost(artifact, level);
+        const multiplier = document.getElementById('artifactMultiplier')?.value || '1';
+        const maxUpgrades = multiplier === 'max' ? getMaxAffordableArtifact(artifact, level) : parseInt(multiplier);
+        
+        let totalCost = 0;
+        for (let i = 0; i < maxUpgrades; i++) {
+            totalCost += getArtifactUpgradeCost(artifact, level + i);
+        }
+        const canAfford = gameState.gold >= totalCost && maxUpgrades > 0;
+        const costText = multiplier === 'max' ? formatNumber(totalCost) : formatNumber(totalCost);
         
         const card = document.createElement('div');
         card.className = 'artifact-card';
@@ -1155,9 +1254,9 @@ function renderArtifacts() {
             <div class="artifact-name">${artifact.name}</div>
             <div class="artifact-level">等级: ${level}</div>
             <div class="artifact-desc">${artifact.desc}</div>
-            <button class="artifact-buy-btn" onclick="upgradeArtifact('${artifact.id}')" 
-                    ${gameState.gold >= upgradeCost ? '' : 'disabled'}>
-                ⬆️ 升级 (${formatNumber(upgradeCost)} 💰)
+            <button class="artifact-buy-btn" onclick="upgradeArtifactBatch('${artifact.id}', document.getElementById('artifactMultiplier').value)" 
+                    ${canAfford ? '' : 'disabled'}>
+                ⬆️ x${maxUpgrades} (${costText} 💰)
             </button>
         `;
         grid.appendChild(card);
@@ -1203,22 +1302,38 @@ function buyRandomArtifact() {
     saveGame();
 }
 
-// 升级神器（用金币）- 无限升级！
+// ===== 升级神器（用金币）- 批量升级！=====
 function upgradeArtifact(artifactId) {
-    // 检查是否已解锁
+    upgradeArtifactBatch(artifactId, '1');
+}
+
+function upgradeArtifactBatch(artifactId, multiplier = '1') {
     if (gameState.artifacts[artifactId] === undefined) {
         showNotification('该神器未解锁!');
         return;
     }
     
     const artifact = artifactConfig.find(a => a.id === artifactId);
-    const level = gameState.artifacts[artifactId] || 0;
-    const cost = getArtifactUpgradeCost(artifact, level);
+    let level = gameState.artifacts[artifactId] || 0;
     
-    if (gameState.gold >= cost) {
-        gameState.gold -= cost;
-        gameState.artifacts[artifactId]++;
-        showNotification(`${artifact.name} → Lv.${gameState.artifacts[artifactId]}！`);
+    // 计算最大可升级次数
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordableArtifact(artifact, level) : parseInt(multiplier);
+    
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    for (let i = 0; i < maxUpgrades; i++) {
+        totalCost += getArtifactUpgradeCost(artifact, level + i);
+    }
+    
+    if (gameState.gold >= totalCost) {
+        gameState.gold -= totalCost;
+        level += maxUpgrades;
+        gameState.artifacts[artifactId] = level;
+        showNotification(`${artifact.name} → Lv.${level} (+${maxUpgrades})！`);
         renderArtifacts();
         updateDisplay();
         updatePlayerHP();
@@ -1226,6 +1341,21 @@ function upgradeArtifact(artifactId) {
     } else {
         showNotification('金币不足!');
     }
+}
+
+function getMaxAffordableArtifact(artifact, startLevel) {
+    let count = 0;
+    let totalCost = 0;
+    while (count < 10000) {
+        const cost = getArtifactUpgradeCost(artifact, startLevel + count);
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            count++;
+        } else {
+            break;
+        }
+    }
+    return count;
 }
 
 // ===== 装备系统 =====

@@ -284,14 +284,9 @@ function calculateDPS() {
     if (gameState.artifacts.lightning > 0) dps *= Math.pow(2, gameState.artifacts.lightning);
     if (gameState.artifacts.iceHeart > 0) dps *= Math.pow(2, gameState.artifacts.iceHeart);
     if (gameState.artifacts.allDamage > 0) dps *= (1 + gameState.artifacts.allDamage * 0.5);
-    if (gameState.artifacts.critEye > 0) dps *= (1 + gameState.artifacts.critEye * 0.05);
     if (gameState.artifacts.fatalBlow > 0) dps *= Math.pow(1.5, gameState.artifacts.fatalBlow);
-    
-    // Berserk: 低血量时增伤（用50%HP为基准计算期望值）
-    if (gameState.artifacts.berserk > 0) {
-        const berserkMult = Math.pow(1.5, gameState.artifacts.berserk);
-        dps *= berserkMult; // 面板始终显示满血值
-    }
+    // 注意：Berserk 只在 <30%HP 时触发，不计入面板 DPS（避免虚高）
+    // 注意：critEye 暴击率不计入 DPS（由 calculateCrit() 单独处理）
     
     // 宠物加成
     if (gameState.activePet && petConfig.find(p => p.id === gameState.activePet)) {
@@ -685,23 +680,18 @@ function dropEquipment() {
         const slotTypes = Object.keys(equipmentConfig);
         const slot = slotTypes[Math.floor(Math.random() * slotTypes.length)];
         
-        // 根据关卡等级决定掉落品质
-        let qualityIndex = 0;
-        const rand = Math.random();
-        if (gameState.level >= 50 && rand < 0.05) qualityIndex = 4; // mythic
-        else if (gameState.level >= 30 && rand < 0.15) qualityIndex = 3; // legendary
-        else if (gameState.level >= 15 && rand < 0.3) qualityIndex = 2; // epic
-        else if (gameState.level >= 5 && rand < 0.5) qualityIndex = 1; // rare
-        else qualityIndex = 0; // common
+        // 根据关卡等级决定掉落品质（每个档位独立随机数，正确概率）
+        let qualityIndex = 0; // 0=common, 1=rare, 2=epic, 3=legendary, 4=mythic
+        if (gameState.level >= 50 && Math.random() < 0.05) qualityIndex = 4; // mythic 5%
+        else if (gameState.level >= 30 && Math.random() < 0.15) qualityIndex = 3; // legendary 15%
+        else if (gameState.level >= 15 && Math.random() < 0.30) qualityIndex = 2; // epic 30%
+        else if (gameState.level >= 5 && Math.random() < 0.50) qualityIndex = 1; // rare 50%
+        else qualityIndex = 0; // common (fallback)
         
-        const items = equipmentConfig[slot].filter(item => {
-            if (qualityIndex === 0) return item.quality === 'common';
-            if (qualityIndex === 1) return item.quality === 'common' || item.quality === 'rare';
-            if (qualityIndex === 2) return item.quality === 'rare' || item.quality === 'epic';
-            if (qualityIndex === 3) return item.quality === 'epic' || item.quality === 'legendary';
-            if (qualityIndex === 4) return item.quality === 'legendary' || item.quality === 'mythic';
-            return false;
-        });
+        const qualityMap = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+        const targetQuality = qualityMap[qualityIndex];
+        
+        const items = equipmentConfig[slot].filter(item => item.quality === targetQuality);
         
         if (items.length > 0) {
             const item = {...items[Math.floor(Math.random() * items.length)], slot};

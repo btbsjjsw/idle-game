@@ -13,21 +13,22 @@ body {
 }
 
 .game-container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
     background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
     min-height: 100vh;
     position: relative;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
     gap: 20px;
+    align-items: flex-start;
 }
 
 /* 主游戏区域（左侧） */
 .main-game-area {
     flex: 1;
-    min-width: 600px;
+    min-width: 0;
 }
 
 /* 详细数据面板（右侧） */
@@ -36,6 +37,8 @@ body {
    ============================================= */
 .stats-panel {
     width: 280px;
+    min-width: 280px;
+    flex-shrink: 0;
     background: #0a0a0a;
     border: 1px solid #2a2a2a;
     border-radius: 12px;

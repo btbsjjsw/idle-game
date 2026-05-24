@@ -2037,6 +2037,84 @@ function updateDisplay() {
     
     document.querySelectorAll('.upgrade-btn')[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
     document.querySelectorAll('.upgrade-btn')[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
+    
+    // 更新详细数据面板
+    updateStatsPanel();
+}
+
+// 更新详细数据面板
+function updateStatsPanel() {
+    const baseClick = gameState.clickDamage;
+    const baseDps = gameState.dps;
+    
+    // 神器加成计算
+    let artifactClickMult = 1;
+    let artifactDpsMult = 1;
+    if (gameState.artifacts.powerBook > 0) artifactClickMult *= Math.pow(1.5, gameState.artifacts.powerBook);
+    if (gameState.artifacts.powerBook > 0) artifactDpsMult *= Math.pow(1.5, gameState.artifacts.powerBook);
+    if (gameState.artifacts.sharpness > 0) artifactClickMult *= Math.pow(1.25, gameState.artifacts.sharpness);
+    if (gameState.artifacts.sharpness > 0) artifactDpsMult *= Math.pow(1.25, gameState.artifacts.sharpness);
+    
+    // 宠物加成计算
+    let petClickBonus = 0;
+    let petDpsBonus = 0;
+    let petGoldMult = 1;
+    if (gameState.activePet) {
+        const pet = petConfig.find(p => p.id === gameState.activePet);
+        if (pet) {
+            if (pet.bonus.attack) petClickBonus = pet.bonus.attack * (gameState.pets[gameState.activePet] || 1);
+            if (pet.bonus.dps) petDpsBonus = pet.bonus.dps * (gameState.pets[gameState.activePet] || 1);
+            if (pet.bonus.gold) petGoldMult = 1 + pet.bonus.gold / 100;
+        }
+    }
+    
+    // 装备加成计算
+    let equipClickBonus = 0;
+    let equipDpsBonus = 0;
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats) {
+            if (item.stats.attack) {
+                equipClickBonus += item.stats.attack;
+                equipDpsBonus += item.stats.attack;
+            }
+        }
+    });
+    
+    // 点击伤害详情
+    document.getElementById('statClickBase').textContent = formatNumber(baseClick);
+    document.getElementById('statClickArtifact').textContent = '×' + artifactClickMult.toFixed(2);
+    document.getElementById('statClickPet').textContent = '+' + formatNumber(petClickBonus);
+    document.getElementById('statClickEquip').textContent = '+' + formatNumber(equipClickBonus);
+    document.getElementById('statClickTotal').textContent = formatNumber(calculateAttack());
+    
+    // DPS详情
+    document.getElementById('statDpsBase').textContent = formatNumber(baseDps);
+    document.getElementById('statDpsArtifact').textContent = '×' + artifactDpsMult.toFixed(2);
+    document.getElementById('statDpsPet').textContent = '+' + formatNumber(petDpsBonus);
+    document.getElementById('statDpsEquip').textContent = '+' + formatNumber(equipDpsBonus);
+    document.getElementById('statDpsTotal').textContent = formatNumber(calculateDPS());
+    
+    // 暴击率
+    document.getElementById('statCritRate').textContent = calculateCrit().toFixed(1) + '%';
+    document.getElementById('statCritDmg').textContent = '×' + (5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0) * (gameState.artifacts.fatalBlow > 0 ? Math.pow(1.5, gameState.artifacts.fatalBlow) : 1)).toFixed(2);
+    
+    // 金币统计
+    const dps = calculateDPS();
+    document.getElementById('statGoldPerSec').textContent = formatNumber(dps);
+    
+    let goldMagnetMult = gameState.artifacts.goldMagnet > 0 ? Math.pow(1.5, gameState.artifacts.goldMagnet) : 1;
+    let treasureMapMult = gameState.artifacts.treasureMap > 0 ? Math.pow(1.5, gameState.artifacts.treasureMap) : 1;
+    let doubleGoldMult = gameState.artifacts.doubleGold > 0 ? Math.pow(2, gameState.artifacts.doubleGold) : 1;
+    
+    document.getElementById('statGoldMagnet').textContent = '×' + goldMagnetMult.toFixed(2);
+    document.getElementById('statTreasureMap').textContent = '×' + treasureMapMult.toFixed(2);
+    document.getElementById('statDoubleGold').textContent = '×' + doubleGoldMult.toFixed(2);
+    document.getElementById('statPetGold').textContent = '×' + petGoldMult.toFixed(2);
+    document.getElementById('statGoldMultiplier').textContent = '×' + (goldMagnetMult * treasureMapMult * doubleGoldMult * petGoldMult).toFixed(2);
+    
+    // 其他属性
+    document.getElementById('statDodge').textContent = (gameState.artifacts.dodge > 0 ? gameState.artifacts.dodge * 10 : 0) + '%';
+    document.getElementById('statRegen').textContent = (gameState.artifacts.regen > 0 ? gameState.artifacts.regen * 5 : 0) + '/s';
 }
 
 // 格式化数字

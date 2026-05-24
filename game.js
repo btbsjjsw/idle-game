@@ -306,10 +306,22 @@ function attackBoss(event) {
         damage *= Math.pow(1.5, gameState.artifacts.berserk);
     }
     
+    // 致命之刃
+    if (gameState.artifacts.fatalBlow > 0 && isCrit) {
+        damage *= Math.pow(1.5, gameState.artifacts.fatalBlow);
+    }
+    
+    // 全伤害加成
+    if (gameState.artifacts.allDamage > 0) {
+        damage *= (1 + gameState.artifacts.allDamage * 0.5);
+    }
+    
     damage *= critMultiplier;
     
-    // 每点伤害给1金币（乘以攻击次数）
+    // 计算总伤害
     let totalDamageDealt = damage * hits;
+    
+    // 每点伤害给1金币
     gameState.gold += Math.floor(totalDamageDealt);
     
     // 应用伤害
@@ -317,6 +329,17 @@ function attackBoss(event) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
         if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, isCrit);
+    }
+    
+    // === 吸血效果 ===
+    if (gameState.artifacts.lifesteal > 0) {
+        const lifestealAmount = Math.floor(totalDamageDealt * 0.05 * gameState.artifacts.lifesteal);
+        if (lifestealAmount > 0) {
+            gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
+            updatePlayerHP();
+            // 显示吸血效果
+            showLifestealNumber(lifestealAmount, event.clientX, event.clientY - 50);
+        }
     }
     
     // Boss受击动画
@@ -329,6 +352,19 @@ function attackBoss(event) {
     updateHPBar();
     updateDisplay();
     saveGame();
+}
+
+// 显示吸血数字
+function showLifestealNumber(amount, x, y) {
+    const float = document.createElement('div');
+    float.className = 'damage-float';
+    float.textContent = '+' + formatNumber(amount) + ' ❤️';
+    float.style.left = (x || window.innerWidth / 2) + 'px';
+    float.style.top = (y || window.innerHeight / 3 - 30) + 'px';
+    float.style.color = '#ff6b6b';
+    float.style.fontSize = '1.2em';
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1000);
 }
 
 // 显示伤害数字
@@ -615,12 +651,28 @@ function startAutoAttack() {
         if (gameState.dps > 0 && gameState.currentHP > 0 && gameState.playerCurrentHp > 0) {
             let damage = calculateDPS();
             
+            // 元素伤害
             if (gameState.artifacts.fireSoul > 0) damage *= Math.pow(2, gameState.artifacts.fireSoul);
             if (gameState.artifacts.lightning > 0) damage *= Math.pow(2, gameState.artifacts.lightning);
             if (gameState.artifacts.iceHeart > 0) damage *= Math.pow(2, gameState.artifacts.iceHeart);
             
+            // 全伤害加成
+            if (gameState.artifacts.allDamage > 0) {
+                damage *= (1 + gameState.artifacts.allDamage * 0.5);
+            }
+            
             gameState.currentHP -= damage;
             gameState.totalDamage += damage;
+            gameState.gold += Math.floor(damage);
+            
+            // DPS吸血
+            if (gameState.artifacts.lifesteal > 0) {
+                const lifestealAmount = Math.floor(damage * 0.05 * gameState.artifacts.lifesteal);
+                if (lifestealAmount > 0) {
+                    gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
+                    updatePlayerHP();
+                }
+            }
             
             if (gameState.currentHP <= 0) killBoss();
             
@@ -1186,11 +1238,13 @@ function loadGame() {
         const loaded = JSON.parse(saved);
         gameState = {...gameState, ...loaded};
         
+        // 不要初始化神器！已解锁的会在loaded里，没解锁的保持undefined
         if (!gameState.artifacts) {
             gameState.artifacts = {};
-            artifactConfig.forEach(a => {
-                gameState.artifacts[a.id] = 0;
-            });
+            // 注释掉这行！否则所有神器都会变成level 0（解锁状态）
+            // artifactConfig.forEach(a => {
+            //     gameState.artifacts[a.id] = 0;
+            // });
         }
         
         if (!gameState.pets) gameState.pets = {};
@@ -1200,7 +1254,8 @@ function loadGame() {
             ring: null, necklace: null, boots: null
         };
         
-        if (!gameState.playerMaxHp) gameState.playerMaxHp = 100;
+        // 修复旧存档的血量
+        if (!gameState.playerMaxHp) gameState.playerMaxHp = 500;
         if (!gameState.playerCurrentHp) gameState.playerCurrentHp = gameState.playerMaxHp;
         if (!gameState.lastSaveTime) gameState.lastSaveTime = Date.now();
     }

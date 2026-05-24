@@ -263,13 +263,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.boss-image img {
-    max-width: 100%;
-    max-height: 100%;
-    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8));
-    transition: transform 0.1s;
+    font-size: 120px;
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
 }
 
 .boss-image.hit {

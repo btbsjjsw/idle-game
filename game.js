@@ -975,6 +975,7 @@ function upgradeClick() {
         gameState.clickDamage = gameState.clickLevel;
         showNotification(`⚔️ 点击伤害 +${actualUpgrades} (共 ${gameState.clickLevel} 级)`);
         updateDisplay();
+        updateStatsPanel();
         saveGame();
     } else {
         showNotification('金币不足!');
@@ -1008,9 +1009,9 @@ function upgradeDPS() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.dpsLevel += actualUpgrades;
-        gameState.dps = gameState.dpsLevel;
         showNotification(`⚔️ 秒伤 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
+        updateStatsPanel();
         saveGame();
     } else {
         showNotification('金币不足!');

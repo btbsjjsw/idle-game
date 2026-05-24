@@ -627,6 +627,29 @@ body {
     flex-wrap: wrap;
 }
 
+.action-group {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.quality-select {
+    padding: 10px 12px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #d4af37;
+    font-size: 13px;
+    cursor: pointer;
+    min-width: 100px;
+}
+
+.quality-select:focus {
+    outline: none;
+    border-color: #d4af37;
+}
+
 .action-btn {
     padding: 10px 18px;
     border: none;
@@ -635,8 +658,7 @@ body {
     font-size: 14px;
     font-weight: bold;
     transition: all 0.3s;
-    flex: 1;
-    min-width: 120px;
+    white-space: nowrap;
 }
 
 .equip-all-btn {

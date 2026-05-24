@@ -619,6 +619,38 @@ body {
 .text-legendary { color: #ff8000; }
 .text-mythic { color: #ff0000; }
 
+/* 升级数量选择器 */
+.upgrade-multiplier, .artifact-multiplier {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: #0a0a0a;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.upgrade-multiplier select, .artifact-multiplier select {
+    padding: 8px 12px;
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #d4af37;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.upgrade-multiplier select:hover, .artifact-multiplier select:hover {
+    background: #2a2a2a;
+}
+
+.upgrade-multiplier select:focus, .artifact-multiplier select:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
 /* 背包操作按钮 */
 .inventory-actions {
     display: flex;

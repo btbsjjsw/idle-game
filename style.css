@@ -1099,3 +1099,33 @@ body {
         justify-content: center;
     }
 }
+
+/* ===== 重置游戏按钮 ===== */
+.reset-game-area {
+    text-align: center;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #8b0000, #dc143c);
+    border: 2px solid #ff4444;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(220, 20, 60, 0.4);
+}
+
+.reset-btn:hover {
+    background: linear-gradient(135deg, #dc143c, #ff6347);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(220, 20, 60, 0.6);
+}
+
+.reset-btn:active {
+    transform: scale(0.98);
+}

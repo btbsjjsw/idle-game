@@ -1381,26 +1381,37 @@ function closeItemDetailModal() {
     selectedItemIndex = null;
 }
 
-// ===== 一键穿戴 =====
-function equipAllBest() {
-    let equippedCount = 0;
+// ===== 一键穿戴（按品质筛选）=====
+function equipByQuality() {
+    const filter = document.getElementById('equipQualityFilter').value;
     const slots = ['weapon', 'helmet', 'armor', 'ring', 'necklace', 'boots'];
     
     // 品质优先级
     const qualityPriority = { mythic: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
     
+    // 筛选品质阈值
+    const qualityThreshold = qualityPriority[filter] || 0;
+    
+    let equippedCount = 0;
+    let skipCount = 0;
+    
     slots.forEach(slot => {
-        // 找出背包中该槽位最好的装备
-        const slotItems = gameState.inventory.filter(item => item.slot === slot);
+        // 找出背包中该槽位、满足品质要求的装备
+        let slotItems = gameState.inventory.filter(item => item.slot === slot);
+        
+        // 按品质筛选
+        if (filter === 'mythic') {
+            slotItems = slotItems.filter(item => item.quality === 'mythic');
+        } else {
+            slotItems = slotItems.filter(item => (qualityPriority[item.quality] || 0) >= qualityThreshold);
+        }
+        
         if (slotItems.length === 0) return;
         
         // 按品质和属性排序
         slotItems.sort((a, b) => {
-            // 先按品质
             const qualityDiff = (qualityPriority[b.quality] || 0) - (qualityPriority[a.quality] || 0);
             if (qualityDiff !== 0) return qualityDiff;
-            
-            // 同品质按总属性
             const aStats = Object.values(a.stats || {}).reduce((sum, v) => sum + v, 0);
             const bStats = Object.values(b.stats || {}).reduce((sum, v) => sum + v, 0);
             return bStats - aStats;
@@ -1410,13 +1421,6 @@ function equipAllBest() {
         const itemIndex = gameState.inventory.findIndex(item => item === bestItem);
         
         if (itemIndex !== -1) {
-            // 如果已有装备，换下来（但不再放入背包，直接丢弃）
-            if (gameState.equipment[slot]) {
-                // 出售已装备的物品
-                gameState.equipment[slot] = null;
-            }
-            
-            // 装备新物品
             gameState.equipment[slot] = bestItem;
             gameState.inventory.splice(itemIndex, 1);
             equippedCount++;
@@ -1424,9 +1428,9 @@ function equipAllBest() {
     });
     
     if (equippedCount > 0) {
-        showNotification(`🎯 一键穿戴成功！装备了 ${equippedCount} 件物品`);
+        showNotification(`🎯 穿戴成功！装备了 ${equippedCount} 件 ${getQualityText(filter)}+ 装备`);
     } else {
-        showNotification(`🎯 背包中没有可穿戴的装备`);
+        showNotification(`🎯 背包中没有符合条件的装备`);
     }
     
     renderInventory();
@@ -1435,37 +1439,69 @@ function equipAllBest() {
     saveGame();
 }
 
-// ===== 一键出售 =====
-function sellAllItems() {
+// ===== 一键出售（按品质筛选）=====
+function sellByQuality() {
+    const filter = document.getElementById('sellQualityFilter').value;
+    
     if (gameState.inventory.length === 0) {
         showNotification(`💰 背包是空的`);
         return;
     }
     
     // 品质价格
-    const qualityPrices = {
-        common: 10,
-        rare: 50,
-        epic: 200,
-        legendary: 1000,
-        mythic: 5000
-    };
+    const qualityPrices = { common: 10, rare: 50, epic: 200, legendary: 1000, mythic: 5000 };
+    const qualityPriority = { common: 1, rare: 2, epic: 3, legendary: 4, mythic: 5 };
     
-    // 出售所有物品
-    let totalGold = 0;
+    let itemsToSell = [];
+    let itemsToKeep = [];
+    
+    // 根据筛选条件分类物品
     gameState.inventory.forEach(item => {
-        const price = qualityPrices[item.quality] || 10;
-        totalGold += price;
+        const itemPriority = qualityPriority[item.quality] || 0;
+        let shouldSell = false;
+        
+        if (filter === 'all') {
+            shouldSell = true;
+        } else if (filter === 'common') {
+            shouldSell = item.quality === 'common';
+        } else {
+            const threshold = qualityPriority[filter] || 0;
+            shouldSell = itemPriority >= threshold;
+        }
+        
+        if (shouldSell) {
+            itemsToSell.push(item);
+        } else {
+            itemsToKeep.push(item);
+        }
+    });
+    
+    if (itemsToSell.length === 0) {
+        showNotification(`💰 没有符合条件的物品可出售`);
+        return;
+    }
+    
+    // 计算总价
+    let totalGold = 0;
+    itemsToSell.forEach(item => {
+        totalGold += qualityPrices[item.quality] || 10;
     });
     
     gameState.gold += totalGold;
-    gameState.inventory = [];
+    gameState.inventory = itemsToKeep;
     
-    showNotification(`💰 一键出售成功！获得 ${formatNumber(totalGold)} 金币`);
+    const filterText = filter === 'all' ? '全部' : getQualityText(filter) + '+';
+    showNotification(`💰 出售成功！${itemsToSell.length} 件 ${filterText}装备，获得 ${formatNumber(totalGold)} 金币`);
     
     renderInventory();
     updateDisplay();
     saveGame();
+}
+
+// 获取品质中文名
+function getQualityText(quality) {
+    const names = { common: '普通', rare: '稀有', epic: '史诗', legendary: '传说', mythic: '神话' };
+    return names[quality] || quality;
 }
 
 // ===== 宠物系统 =====

@@ -162,8 +162,27 @@
                 <div class="inventory-list">
                     <h3>背包物品 <span id="inventoryCount" style="font-size:0.6em;color:#888;">(0)</span></h3>
                     <div class="inventory-actions">
-                        <button class="action-btn equip-all-btn" onclick="equipAllBest()">🎯 一键穿戴</button>
-                        <button class="action-btn sell-all-btn" onclick="sellAllItems()">💰 一键出售</button>
+                        <div class="action-group">
+                            <select id="equipQualityFilter" class="quality-select">
+                                <option value="common">普通+</option>
+                                <option value="rare">稀有+</option>
+                                <option value="epic">史诗+</option>
+                                <option value="legendary">传说+</option>
+                                <option value="mythic">仅神话</option>
+                            </select>
+                            <button class="action-btn equip-all-btn" onclick="equipByQuality()">🎯 一键穿戴</button>
+                        </div>
+                        <div class="action-group">
+                            <select id="sellQualityFilter" class="quality-select">
+                                <option value="all">全部</option>
+                                <option value="common">仅普通</option>
+                                <option value="rare">稀有+</option>
+                                <option value="epic">史诗+</option>
+                                <option value="legendary">传说+</option>
+                                <option value="mythic">仅神话</option>
+                            </select>
+                            <button class="action-btn sell-all-btn" onclick="sellByQuality()">💰 一键出售</button>
+                        </div>
                     </div>
                     <div class="inventory-grid" id="inventoryGrid"></div>
                 </div>

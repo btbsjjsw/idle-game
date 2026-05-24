@@ -11,7 +11,6 @@ let gameState = {
     maxHP: 100,
     playerMaxHp: 100,
     playerCurrentHp: 100,
-    artifactPoints: 0,
     petPoints: 0,
     artifacts: {},
     equipment: {
@@ -630,7 +629,7 @@ function startAutoAttack() {
     }, 1000);
 }
 
-// ===== 神器系统 =====
+// ===== 神器系统（阶梯式购买+金币升级） =====
 function openArtifactModal() {
     renderArtifacts();
     document.getElementById('artifactModal').classList.add('active');
@@ -645,10 +644,28 @@ function renderArtifacts() {
     const grid = document.getElementById('artifactGrid');
     grid.innerHTML = '';
     
+    // 添加购买区域
+    const shopSection = document.createElement('div');
+    shopSection.style.cssText = 'grid-column: 1 / -1; background: #0a0a0a; border: 2px solid #d4af37; border-radius: 10px; padding: 15px; margin-bottom: 15px;';
+    shopSection.innerHTML = `
+        <h3 style="text-align: center; color: #d4af37; margin-bottom: 15px;">🎰 神器商店</h3>
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <button class="artifact-buy-btn" style="padding: 12px 25px; font-size: 1.1em;" onclick="buyRandomArtifact(100)" 
+                    ${gameState.gold >= 100 ? '' : 'disabled'}>
+                💰 100 金币<br><span style="font-size: 0.8em;">随机普通神器</span>
+            </button>
+            <button class="artifact-buy-btn" style="padding: 12px 25px; font-size: 1.1em;" onclick="buyRandomArtifact(1000)" 
+                    ${gameState.gold >= 1000 ? '' : 'disabled'}>
+                💰 1000 金币<br><span style="font-size: 0.8em;">随机高级神器</span>
+            </button>
+        </div>
+    `;
+    grid.appendChild(shopSection);
+    
     artifactConfig.forEach(artifact => {
         const level = gameState.artifacts[artifact.id] || 0;
-        const cost = Math.floor(artifact.baseCost * Math.pow(artifact.costMult, level));
         const isMaxLevel = level >= artifact.maxLevel;
+        const upgradeCost = getArtifactUpgradeCost(artifact, level);
         
         const card = document.createElement('div');
         card.className = 'artifact-card';
@@ -658,16 +675,65 @@ function renderArtifacts() {
             <div class="artifact-level">等级: ${level}/${artifact.maxLevel}</div>
             <div class="artifact-desc">${artifact.desc}</div>
             <button class="artifact-buy-btn" onclick="buyArtifact('${artifact.id}')" 
-                    ${gameState.artifactPoints >= cost && !isMaxLevel ? '' : 'disabled'}>
-                ${isMaxLevel ? 'MAX' : `升级 (${formatNumber(cost)} 点)`}
+                    ${gameState.gold >= upgradeCost && !isMaxLevel ? '' : 'disabled'}>
+                ${isMaxLevel ? '✅ MAX' : `⬆️ 升级 (${formatNumber(upgradeCost)} 💰)`}
             </button>
         `;
         grid.appendChild(card);
     });
     
-    document.getElementById('artifactPointsDisplay').textContent = formatNumber(gameState.artifactPoints);
+    document.getElementById('artifactPointsDisplay').textContent = formatNumber(gameState.gold);
 }
 
+// 获取神器升级费用
+function getArtifactUpgradeCost(artifact, currentLevel) {
+    if (currentLevel >= artifact.maxLevel) return Infinity;
+    // 基础费用10，每级1.8倍增长
+    return Math.floor(10 * Math.pow(1.8, currentLevel));
+}
+
+// 购买随机神器
+function buyRandomArtifact(price) {
+    if (gameState.gold < price) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    gameState.gold -= price;
+    
+    // 根据价格决定随机范围
+    let availableArtifacts;
+    if (price >= 1000) {
+        // 高级神器：从后20个神器中选
+        availableArtifacts = artifactConfig.slice(-20);
+    } else {
+        // 普通神器：从全部神器中选
+        availableArtifacts = artifactConfig;
+    }
+    
+    // 随机选择一个神器
+    const randomArtifact = availableArtifacts[Math.floor(Math.random() * availableArtifacts.length)];
+    
+    // 检查是否已满级
+    if (gameState.artifacts[randomArtifact.id] >= randomArtifact.maxLevel) {
+        // 满级了，给金币补偿
+        const refund = Math.floor(price * 0.5);
+        gameState.gold += refund;
+        showNotification(`该神器已满级！返还 ${formatNumber(refund)} 金币`);
+    } else {
+        // 给1-3级
+        const levelsToAdd = Math.min(3, randomArtifact.maxLevel - gameState.artifacts[randomArtifact.id]);
+        gameState.artifacts[randomArtifact.id] += levelsToAdd;
+        showNotification(`🎉 获得 ${randomArtifact.name} Lv+${levelsToAdd}!`);
+    }
+    
+    renderArtifacts();
+    updateDisplay();
+    updatePlayerHP();
+    saveGame();
+}
+
+// 升级神器（用金币）
 function buyArtifact(artifactId) {
     const artifact = artifactConfig.find(a => a.id === artifactId);
     const level = gameState.artifacts[artifactId] || 0;
@@ -677,18 +743,18 @@ function buyArtifact(artifactId) {
         return;
     }
     
-    const cost = Math.floor(artifact.baseCost * Math.pow(artifact.costMult, level));
+    const cost = getArtifactUpgradeCost(artifact, level);
     
-    if (gameState.artifactPoints >= cost) {
-        gameState.artifactPoints -= cost;
+    if (gameState.gold >= cost) {
+        gameState.gold -= cost;
         gameState.artifacts[artifactId]++;
-        showNotification(`神器升级: ${artifact.name}!`);
+        showNotification(`神器升级: ${artifact.name} Lv.${gameState.artifacts[artifactId]}!`);
         renderArtifacts();
         updateDisplay();
         updatePlayerHP();
         saveGame();
     } else {
-        showNotification('神器点不足!');
+        showNotification('金币不足!');
     }
 }
 
@@ -976,16 +1042,15 @@ function unequipPet() {
     saveGame();
 }
 
-// ===== 重生系统 =====
+// ===== 重生系统（只给宠物点） =====
 function openRebirthModal() {
     if (gameState.maxLevel < 10) {
         showNotification('需要达到第10关才能重生!');
         return;
     }
     
-    const reward = Math.floor(Math.pow(gameState.maxLevel, 0.7)) * 5;
     const petReward = Math.floor(gameState.maxLevel * 0.5);
-    document.getElementById('rebirthReward').textContent = `${reward} 神器点 + ${petReward} 宠物点`;
+    document.getElementById('rebirthReward').textContent = `${petReward} 宠物点 (神器用金币购买!)`;
     document.getElementById('rebirthModal').classList.add('active');
 }
 
@@ -994,15 +1059,12 @@ function closeRebirthModal() {
 }
 
 function rebirth() {
-    const artifactReward = Math.floor(Math.pow(gameState.maxLevel, 0.7)) * 5;
     const petReward = Math.floor(gameState.maxLevel * 0.5);
     
-    gameState.artifactPoints += artifactReward;
     gameState.petPoints += petReward;
     
     const savedArtifacts = {...gameState.artifacts};
     const savedPets = {...gameState.pets};
-    const savedArtifactPoints = gameState.artifactPoints;
     const savedPetPoints = gameState.petPoints;
     const savedEquipment = {...gameState.equipment};
     const savedInventory = [...gameState.inventory];
@@ -1020,12 +1082,11 @@ function rebirth() {
         maxHP: 100,
         playerMaxHp: 100,
         playerCurrentHp: 100,
-        artifactPoints: savedArtifactPoints,
-        petPoints: savedPetPoints,
         artifacts: savedArtifacts,
         equipment: savedEquipment,
         inventory: savedInventory,
         pets: savedPets,
+        petPoints: savedPetPoints,
         activePet: savedActivePet,
         totalDamage: 0,
         startTime: Date.now(),
@@ -1043,7 +1104,7 @@ function rebirth() {
     renderArtifacts();
     renderInventory();
     renderPets();
-    showNotification(`重生成功! 获得 ${artifactReward} 神器点 + ${petReward} 宠物点!`);
+    showNotification(`重生成功! 获得 ${petReward} 宠物点! (神器用金币购买)`);
     saveGame();
 }
 
@@ -1058,7 +1119,6 @@ function updateDisplay() {
     document.getElementById('dpsCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5)));
     document.getElementById('clickLevel').textContent = gameState.clickLevel;
     document.getElementById('dpsLevel').textContent = gameState.dpsLevel;
-    document.getElementById('artifactPoints').textContent = formatNumber(gameState.artifactPoints);
     document.getElementById('rebirthBtn').disabled = gameState.maxLevel < 10;
     
     document.querySelectorAll('.upgrade-btn')[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));

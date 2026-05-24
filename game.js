@@ -150,18 +150,26 @@ const petConfig = [
     {id: 'god', name: '神灵', icon: '🌟', rarity: 'mythic', bonus: {dps: 500, gold: 100, crit: 50}, price: 50000, desc: 'DPS +500, 金币 +100%'}
 ];
 
-// Boss图片URL（使用SVG生成的燃气表）
+// Boss表情包（emoji，每个Boss不同）
 const bossImages = [
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFhMWExYSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiMzMzMiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyMCIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEgxMjAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwLDgwIFYxMjAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzJhMmEyYSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM0MzQiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iJmx0OycgdGFnJyBxdW90ZT0iIzAwNzBmZiIvPjxwYXRoIGQ9Ik04MCw5MCBIMTIwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik05MCw4MCBWMTEwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzNhM2EzYSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM1MzUiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzRhNGE0YSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM2MzYiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzVhNWE1YSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM3NDciIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTUsNzUgTDExNSw3NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzZhNmE2YSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM4NTgiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNODAsMTEwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzdhN2E3YSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM5NjkiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNODUsNzUgTDExNSwxMjUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzhhOGE4YSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM3NzgiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmY4MDAwIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzliOWI5YiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM4ODkiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNODAsMTEwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
-    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFjMWMxYyIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNjAiIGZpbGw9IiM5OTkiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIyNSIgZmlsbD0iIiR0YWcnIi8+PHBhdGggZD0iTTgwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTIwLDkwIEg5NSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAsODAgVjExMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNODUsNzUgTDExNSwxMjUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+'
+    '💀', '👹', '👺', '👻', '👽', '👾', '🤖', '💩', '😈', '🎃',
+    '🐉', '🦇', '🐙', '🦑', '🦕', '🦖', '🦎', '🐍', '🦂', '🕷️',
+    '☠️', '💀', '👹', '👺', '👻', '👽', '👾', '🤖', '💩', '😈',
+    '🎃', '🐉', '🦇', '🐙', '🦑', '🦕', '🦖', '🦎', '🐍', '🦂'
+];
+
+// Boss SVG图标（备用）
+const bossSVGImages = [
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23333\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23666\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E💀%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23444\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23777\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E👹%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23555\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23888\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E👺%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%231a1a2e\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%233d3d5c\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E👻%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%2300ff00\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23008800\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E👽%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%236600ff\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%233300aa\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E👾%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23aaa\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23ccc\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E🤖%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%238b4513\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23cd853f\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E💩%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23ff0000\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23cc0000\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E😈%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23ff6600\'/%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'35\' fill=\'%23cc5200\'/%3E%3Ctext x=\'50\' y=\'60\' text-anchor=\'middle\' font-size=\'30\'%3E🎃%3C/text%3E%3C/svg%3E'
 ];
 
 // 初始化游戏
@@ -567,7 +575,7 @@ function restartGame() {
     location.reload();
 }
 
-// 更新Boss（每个Boss都有不同的图片）
+// 更新Boss（每个Boss都有不同的emoji）
 function updateBoss() {
     gameState.maxHP = Math.floor(100 * Math.pow(1.8, gameState.level - 1));
     gameState.currentHP = gameState.maxHP;
@@ -582,15 +590,18 @@ function updateBoss() {
     document.getElementById('bossName').textContent = bossNames[(gameState.level - 1) % bossNames.length];
     document.getElementById('bossLevel').textContent = gameState.level;
     
-    // 每个关卡使用不同的图片（循环使用10个图片）
+    // 每个关卡使用不同的emoji（循环使用40个emoji）
     const imageIndex = (gameState.level - 1) % bossImages.length;
+    const bossEmoji = bossImages[imageIndex];
     
-    // 更新Boss图片
-    const img = document.getElementById('bossImg');
-    if (img) {
-        img.src = bossImages[imageIndex];
-        img.alt = bossNames[(gameState.level - 1) % bossNames.length];
-        img.style.display = 'block';
+    // 更新Boss图片 - 直接设置emoji
+    const bossArea = document.getElementById('bossImage');
+    if (bossArea) {
+        bossArea.textContent = bossEmoji;
+        bossArea.style.fontSize = '120px';
+        bossArea.style.display = 'flex';
+        bossArea.style.alignItems = 'center';
+        bossArea.style.justifyContent = 'center';
     }
     
     updateHPBar();

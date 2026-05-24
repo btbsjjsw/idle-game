@@ -853,6 +853,11 @@ function resetAllGameData() {
     // 清除所有存档
     localStorage.removeItem('bossRPGSave');
     
+    // 保留重生相关数据
+    const rebirthCount = gameState.rebirthCount || 0;
+    const rebirthGoldBonus = gameState.rebirthGoldBonus || 0;
+    const rebirthDamageBonus = gameState.rebirthDamageBonus || 0;
+    
     // 重置所有游戏状态
     gameState = {
         gold: 0,
@@ -874,12 +879,9 @@ function resetAllGameData() {
         totalGoldEarned: 0,
         totalBossKills: 0,
         lastSaveTime: Date.now(),
-        // 保留重生数据
-        rebirthCount: gameState.rebirthCount || 0,
-        rebirthGoldBonus: gameState.rebirthGoldBonus || 0,
-        rebirthDamageBonus: gameState.rebirthDamageBonus || 0,
-        clickLevel: 1,
-        dpsLevel: 0
+        rebirthCount: rebirthCount,
+        rebirthGoldBonus: rebirthGoldBonus,
+        rebirthDamageBonus: rebirthDamageBonus
     };
     
     // 重新初始化

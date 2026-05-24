@@ -494,8 +494,11 @@ function showDamageNumber(damage, x, y, effectType) {
     const dmgFloat = document.createElement('div');
     dmgFloat.className = 'damage-float';
     dmgFloat.textContent = formatNumber(Math.floor(damage));
-    dmgFloat.style.left = (x || window.innerWidth / 2) + 'px';
-    dmgFloat.style.top = (y || window.innerHeight / 3) + 'px';
+    // 随机偏移防止数字重叠
+    const offsetX = (Math.random() - 0.5) * 60;
+    const offsetY = (Math.random() - 0.5) * 40;
+    dmgFloat.style.left = ((x || window.innerWidth / 2) + offsetX) + 'px';
+    dmgFloat.style.top = ((y || window.innerHeight / 3) + offsetY) + 'px';
     
     // 根据特效类型设置不同的样式
     switch(effectType) {
@@ -536,6 +539,12 @@ function showDamageNumber(damage, x, y, effectType) {
             dmgFloat.style.fontSize = '1.5em';
             dmgFloat.style.textShadow = '0 0 10px #00ff00';
             dmgFloat.textContent = '☠️' + dmgFloat.textContent;
+            break;
+        case 'player':
+            dmgFloat.style.color = '#ff4444';
+            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.textShadow = '0 0 8px #ff0000';
+            dmgFloat.textContent = '-' + dmgFloat.textContent + ' ❤️';
             break;
         default:
             dmgFloat.style.color = '#ffffff';
@@ -782,11 +791,10 @@ function startBossAttack() {
                 gameState.playerCurrentHp -= finalDamage;
                 
                 // 显示玩家受到的伤害
-                const playerHpBar = document.querySelector('.player-hp-bar');
-                if (playerHpBar) {
-                    const rect = playerHpBar.getBoundingClientRect();
-                    showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top, false);
-                    document.querySelectorAll('.damage-float').forEach(el => el.classList.add('player-damage'));
+                const playerHpWrap = document.querySelector('.player-hp-wrap');
+                if (playerHpWrap) {
+                    const rect = playerHpWrap.getBoundingClientRect();
+                    showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'player');
                 }
                 
                 updatePlayerHP();

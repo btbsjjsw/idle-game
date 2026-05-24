@@ -160,7 +160,11 @@
                     </div>
                 </div>
                 <div class="inventory-list">
-                    <h3>背包物品</h3>
+                    <h3>背包物品 <span id="inventoryCount" style="font-size:0.6em;color:#888;">(0)</span></h3>
+                    <div class="inventory-actions">
+                        <button class="action-btn equip-all-btn" onclick="equipAllBest()">🎯 一键穿戴</button>
+                        <button class="action-btn sell-all-btn" onclick="sellAllItems()">💰 一键出售</button>
+                    </div>
                     <div class="inventory-grid" id="inventoryGrid"></div>
                 </div>
             </div>

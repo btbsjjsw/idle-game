@@ -278,6 +278,18 @@ function calculateDPS() {
     // 神器加成
     if (gameState.artifacts.powerBook > 0) dps *= Math.pow(1.5, gameState.artifacts.powerBook);
     if (gameState.artifacts.sharpness > 0) dps *= Math.pow(1.25, gameState.artifacts.sharpness);
+    if (gameState.artifacts.fireSoul > 0) dps *= Math.pow(2, gameState.artifacts.fireSoul);
+    if (gameState.artifacts.lightning > 0) dps *= Math.pow(2, gameState.artifacts.lightning);
+    if (gameState.artifacts.iceHeart > 0) dps *= Math.pow(2, gameState.artifacts.iceHeart);
+    if (gameState.artifacts.allDamage > 0) dps *= (1 + gameState.artifacts.allDamage * 0.5);
+    if (gameState.artifacts.critEye > 0) dps *= (1 + gameState.artifacts.critEye * 0.05);
+    if (gameState.artifacts.fatalBlow > 0) dps *= Math.pow(1.5, gameState.artifacts.fatalBlow);
+    
+    // Berserk: 低血量时增伤（用50%HP为基准计算期望值）
+    if (gameState.artifacts.berserk > 0) {
+        const berserkMult = Math.pow(1.5, gameState.artifacts.berserk);
+        dps *= berserkMult; // 面板始终显示满血值
+    }
     
     // 宠物加成
     if (gameState.activePet && petConfig.find(p => p.id === gameState.activePet)) {
@@ -451,9 +463,12 @@ function attackBoss(event) {
     bossImg.classList.add('hit');
     setTimeout(() => bossImg.classList.remove('hit'), 200);
     
-    // === 毒液效果 ===
+    // === 毒液效果（每1秒最多刷新一次）===
     if (gameState.artifacts.poison > 0 && gameState.currentHP > 0) {
-        applyPoison();
+        if (!window._lastPoisonApply || Date.now() - window._lastPoisonApply > 1000) {
+            applyPoison();
+            window._lastPoisonApply = Date.now();
+        }
     }
     
     if (gameState.currentHP <= 0) killBoss();
@@ -623,10 +638,10 @@ function killBoss() {
     const goldReward = gameState.level * 5; // 击杀额外奖励
     let finalGold = goldReward;
     
-    // 爆裂护符 - 额外爆炸伤害
+    // 爆裂护符 - 额外爆炸伤害（边界检查）
     if (gameState.artifacts.explosion > 0) {
-        const explosionDamage = gameState.maxHP * 0.5 * gameState.artifacts.explosion;
-        gameState.gold += Math.floor(explosionDamage * 0.1); // 爆炸伤害的10%转为金币
+        const explosionDamage = Math.min(gameState.currentHP + gameState.maxHP, gameState.maxHP * 0.5 * gameState.artifacts.explosion);
+        gameState.gold += Math.floor(explosionDamage * 0.1);
     }
     
     // 金币加成（只对击杀奖励生效）
@@ -1071,62 +1086,88 @@ function updateUpgradeCosts() {
 // 自动攻击（DPS）
 function startAutoAttack() {
     setInterval(() => {
-        if (gameState.currentHP > 0 && gameState.playerCurrentHp > 0) {
-            let damage = calculateDPS();
-            let effectType = 'normal';
-            
-            // 元素伤害
-            if (gameState.artifacts.fireSoul > 0) {
-                damage *= Math.pow(2, gameState.artifacts.fireSoul);
-                effectType = 'fire';
-            }
-            if (gameState.artifacts.lightning > 0) {
-                damage *= Math.pow(2, gameState.artifacts.lightning);
-                if (effectType !== 'fire') effectType = 'lightning';
-            }
-            if (gameState.artifacts.iceHeart > 0) {
-                damage *= Math.pow(2, gameState.artifacts.iceHeart);
-                if (effectType === 'normal') effectType = 'ice';
-            }
-            
-            // 全伤害加成
-            if (gameState.artifacts.allDamage > 0) {
-                damage *= (1 + gameState.artifacts.allDamage * 0.5);
-            }
-            
-            gameState.currentHP -= damage;
-            gameState.totalDamage += damage;
-            
-            // 金币加成（受金币磁体影响）
-            let goldMultiplier = 1;
-            if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
-            gameState.gold += Math.floor(damage * goldMultiplier);
-            
-            // 连锁闪电（对假目标额外伤害）
-            if (gameState.artifacts.chainLightning > 0) {
-                const chainDamage = damage * 0.5 * gameState.artifacts.chainLightning;
-                gameState.currentHP -= chainDamage; // 实际扣减连锁闪电伤害
-                gameState.totalDamage += chainDamage;
-                gameState.gold += Math.floor(chainDamage * goldMultiplier); // 连锁闪电也有金币
-                // 创建连锁闪电特效
-                createChainLightningEffect();
-            }
-            
-            // DPS吸血
-            if (gameState.artifacts.lifesteal > 0) {
-                const lifestealAmount = Math.floor(damage * 0.05 * gameState.artifacts.lifesteal);
-                if (lifestealAmount > 0) {
-                    gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
-                    updatePlayerHP();
-                }
-            }
-            
-            if (gameState.currentHP <= 0) killBoss();
-            
-            updateHPBar();
-            updateDisplay();
-            updateStatsPanel();
+        if (gameState.currentHP <= 0 || gameState.playerCurrentHp <= 0) return;
+        
+        // === 计算基础伤害 ===
+        let baseDamage = calculateDPS();
+        
+        // === 计算命中次数（多重打击 + 连击期望值）===
+        let hits = 1;
+        if (gameState.artifacts.multiHit > 0) hits += gameState.artifacts.multiHit;
+        if (gameState.artifacts.combo > 0) hits += gameState.artifacts.combo * 0.1;
+        if (gameState.artifacts.attackSpeed > 0) hits += Math.floor(gameState.artifacts.attackSpeed * 0.1);
+        
+        // === 计算暴击 ===
+        let critMultiplier = 1;
+        let isCrit = false;
+        const critChance = calculateCrit();
+        if (Math.random() * 100 < critChance) {
+            critMultiplier = 5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0);
+            if (gameState.artifacts.fatalBlow > 0) critMultiplier *= Math.pow(1.5, gameState.artifacts.fatalBlow);
+            isCrit = true;
         }
+        
+        // === 元素与增伤 ===
+        let effectType = 'normal';
+        if (gameState.artifacts.fireSoul > 0) {
+            baseDamage *= Math.pow(2, gameState.artifacts.fireSoul);
+            effectType = 'fire';
+        }
+        if (gameState.artifacts.lightning > 0) {
+            baseDamage *= Math.pow(2, gameState.artifacts.lightning);
+            if (effectType !== 'fire') effectType = 'lightning';
+        }
+        if (gameState.artifacts.iceHeart > 0) {
+            baseDamage *= Math.pow(2, gameState.artifacts.iceHeart);
+            if (effectType === 'normal') effectType = 'ice';
+        }
+        if (gameState.artifacts.allDamage > 0) {
+            baseDamage *= (1 + gameState.artifacts.allDamage * 0.5);
+        }
+        // Berserk 低血量增伤
+        if (gameState.artifacts.berserk > 0 && gameState.playerCurrentHp < gameState.playerMaxHp * 0.3) {
+            baseDamage *= Math.pow(1.5, gameState.artifacts.berserk);
+        }
+        
+        baseDamage *= critMultiplier;
+        
+        // === 连锁闪电（独立额外伤害）===
+        let chainDamage = 0;
+        if (gameState.artifacts.chainLightning > 0) {
+            chainDamage = baseDamage * hits * 0.5 * gameState.artifacts.chainLightning;
+        }
+        
+        // === 总伤害 ===
+        let totalDamage = baseDamage * hits + chainDamage;
+        
+        // === 边界检查 ===
+        if (gameState.currentHP > 0) {
+            gameState.currentHP -= totalDamage;
+            gameState.totalDamage += totalDamage;
+        }
+        
+        // === 金币 ===
+        let goldMultiplier = 1;
+        if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+        gameState.gold += Math.floor(totalDamage * goldMultiplier);
+        
+        // === 特效 ===
+        if (chainDamage > 0) createChainLightningEffect();
+        
+        // === 吸血 ===
+        if (gameState.artifacts.lifesteal > 0) {
+            const lifestealAmount = Math.floor(totalDamage * 0.05 * gameState.artifacts.lifesteal);
+            if (lifestealAmount > 0) {
+                gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
+                updatePlayerHP();
+            }
+        }
+        
+        if (gameState.currentHP <= 0) killBoss();
+        
+        updateHPBar();
+        updateDisplay();
+        updateStatsPanel();
     }, 1000);
 }
 
@@ -1978,6 +2019,8 @@ function rebirth() {
     // 只保存神器（唯一永久保留的）
     const savedArtifacts = {...gameState.artifacts};
     
+    const savedPets = {...gameState.pets};  // 保留已购买的宠物
+    
     gameState = {
         gold: 0,
         level: 1,
@@ -1991,7 +2034,6 @@ function rebirth() {
         playerMaxHp: 500,
         playerCurrentHp: 500,
         artifacts: savedArtifacts,  // 神器永久保存！
-        // 其他全部重置
         equipment: {
             weapon: null,
             helmet: null,
@@ -2001,7 +2043,7 @@ function rebirth() {
             boots: null
         },
         inventory: [],
-        pets: {},
+        pets: savedPets,           // 宠物也保留！
         petPoints: gameState.petPoints,
         activePet: null,
         totalDamage: 0,

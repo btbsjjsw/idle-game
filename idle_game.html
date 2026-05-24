@@ -20,9 +20,14 @@
                 <span class="label">关卡:</span>
                 <span class="value" id="currentLevel">1</span>
             </div>
-            <button class="rebirth-btn" id="rebirthBtn" onclick="openRebirthModal()">
-                🔄 重生
-            </button>
+            <div class="top-buttons">
+                <button class="artifact-btn" onclick="openArtifactModal()">
+                    🗡️ 神器
+                </button>
+                <button class="rebirth-btn" id="rebirthBtn" onclick="openRebirthModal()">
+                    🔄 重生
+                </button>
+            </div>
         </div>
 
         <!-- Boss区域 -->
@@ -70,12 +75,22 @@
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- 神器商店 -->
-        <div class="artifact-shop">
-            <h2>🏪 神器商店 <span class="artifact-points">神器点: <span id="artifactPoints">0</span></span></h2>
-            <div class="artifact-grid" id="artifactGrid">
-                <!-- 神器卡片动态生成 -->
+    <!-- 神器模态窗口（全屏） -->
+    <div class="modal-overlay" id="artifactModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2>🗡️ 神器商店</h2>
+                <div class="artifact-points-banner">
+                    神器点: <span id="artifactPointsDisplay">0</span>
+                </div>
+                <button class="modal-close-btn" onclick="closeArtifactModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="artifact-grid" id="artifactGrid">
+                    <!-- 40个神器卡片动态生成 -->
+                </div>
             </div>
         </div>
     </div>

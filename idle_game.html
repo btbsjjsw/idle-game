@@ -3,75 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>放置挖矿游戏</title>
+    <title>暗黑地牢 - Boss点击RPG</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>⛏️ 放置挖矿游戏</h1>
-            <p class="subtitle">点击挖矿，雇佣矿工，自动致富！</p>
-        </header>
+    <div class="game-container">
+        <!-- 顶部资源栏 -->
+        <div class="top-bar">
+            <div class="resource gold">
+                <span class="icon">💰</span>
+                <span class="label">金币:</span>
+                <span class="value" id="gold">0</span>
+            </div>
+            <div class="resource level">
+                <span class="icon">⚔️</span>
+                <span class="label">关卡:</span>
+                <span class="value" id="currentLevel">1</span>
+            </div>
+            <button class="rebirth-btn" id="rebirthBtn" onclick="openRebirthModal()">
+                🔄 重生
+            </button>
+        </div>
 
-        <div class="game-area">
-            <div class="resources">
-                <div class="resource-item">
-                    <span class="resource-icon">💰</span>
-                    <span class="resource-label">金币</span>
-                    <span class="resource-value" id="gold">0</span>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">⛏️</span>
-                    <span class="resource-label">矿工</span>
-                    <span class="resource-value" id="miners">0</span>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">⚡</span>
-                    <span class="resource-label">每秒产出</span>
-                    <span class="resource-value" id="gps">0</span>
+        <!-- Boss区域 -->
+        <div class="boss-area">
+            <div class="boss-info">
+                <div class="boss-name" id="bossName">燃气表-I型 基本型</div>
+                <div class="boss-level">Lv. <span id="bossLevel">1</span></div>
+            </div>
+            <div class="boss-hp-bar">
+                <div class="hp-fill" id="hpFill"></div>
+                <div class="hp-text">
+                    <span id="currentHP">100</span> / <span id="maxHP">100</span>
                 </div>
             </div>
-
-            <div class="click-area">
-                <button class="mine-btn" id="mineBtn" onclick="mine()">
-                    <span class="btn-icon">⛏️</span>
-                    <span class="btn-text">点击挖矿</span>
-                    <span class="btn-hint">每次 +<span id="clickPower">1</span> 金币</span>
-                </button>
-            </div>
-
-            <div class="upgrades">
-                <h2>🏪 升级商店</h2>
-                <div class="upgrade-grid">
-                    <div class="upgrade-item" id="upgrade-miner">
-                        <h3>雇佣矿工</h3>
-                        <p class="description">自动挖矿，每秒产出 1 金币</p>
-                        <div class="cost">费用: <span id="minerCost">10</span> 💰</div>
-                        <button onclick="buyMiner()" class="buy-btn">雇佣</button>
-                    </div>
-
-                    <div class="upgrade-item" id="upgrade-pickaxe">
-                        <h3>升级镐子</h3>
-                        <p class="description">提升点击威力</p>
-                        <div class="cost">费用: <span id="pickaxeCost">50</span> 💰</div>
-                        <button onclick="upgradePickaxe()" class="buy-btn">升级</button>
-                    </div>
-
-                    <div class="upgrade-item" id="upgrade-miner-power">
-                        <h3>强化矿工</h3>
-                        <p class="description">矿工效率 x2</p>
-                        <div class="cost">费用: <span id="minerPowerCost">100</span> 💰</div>
-                        <button onclick="upgradeMinerPower()" class="buy-btn">强化</button>
-                    </div>
-                </div>
+            <div class="boss-click-area" id="bossClickArea" onclick="attackBoss(event)">
+                <div class="boss-icon" id="bossIcon">👹</div>
             </div>
         </div>
 
-        <div class="stats">
-            <h2>📊 统计信息</h2>
-            <p>总点击次数: <span id="totalClicks">0</span></p>
-            <p>总挖矿量: <span id="totalMined">0</span> 💰</p>
-            <p>游戏时间: <span id="playTime">0</span> 秒</p>
+        <!-- 伤害统计 -->
+        <div class="damage-stats">
+            <div class="stat-item">
+                <span class="stat-label">点击伤害:</span>
+                <span class="stat-value" id="clickDamage">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">每秒伤害:</span>
+                <span class="stat-value" id="dps">0</span>
+            </div>
+        </div>
+
+        <!-- 升级面板 -->
+        <div class="upgrade-panel">
+            <h2>⚒️ 升级面板</h2>
+            <div class="upgrade-buttons">
+                <button class="upgrade-btn" onclick="upgradeClick()">
+                    <div class="upgrade-name">升级点击</div>
+                    <div class="upgrade-cost">费用: <span id="clickCost">10</span> 💰</div>
+                    <div class="upgrade-level">等级: <span id="clickLevel">1</span></div>
+                </button>
+                <button class="upgrade-btn" onclick="upgradeDPS()">
+                    <div class="upgrade-name">升级秒伤</div>
+                    <div class="upgrade-cost">费用: <span id="dpsCost">10</span> 💰</div>
+                    <div class="upgrade-level">等级: <span id="dpsLevel">0</span></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- 神器商店 -->
+        <div class="artifact-shop">
+            <h2>🏪 神器商店 <span class="artifact-points">神器点: <span id="artifactPoints">0</span></span></h2>
+            <div class="artifact-grid" id="artifactGrid">
+                <!-- 神器卡片动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 重生确认弹窗 -->
+    <div class="modal" id="rebirthModal">
+        <div class="modal-content">
+            <h2>🔄 确认重生？</h2>
+            <p>重生将重置关卡、金币和等级，但获得神器点！</p>
+            <div class="rebirth-reward">
+                <p>本次可获得: <span id="rebirthReward">0</span> 神器点</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="confirm-btn" onclick="rebirth()">确认重生</button>
+                <button class="cancel-btn" onclick="closeRebirthModal()">取消</button>
+            </div>
         </div>
     </div>
 

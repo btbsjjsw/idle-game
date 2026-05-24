@@ -569,6 +569,10 @@ function showDamageNumber(damage, x, y, effectType) {
     dmgFloat.style.left = (finalX + offsetX) + 'px';
     dmgFloat.style.top = (finalY + offsetY) + 'px';
     
+    // 调试：在控制台显示坐标（正式发布时删除）
+    console.log(`[DEBUG] showDamageNumber: damage=${damage}, x=${x}, y=${y}, finalX=${finalX}, finalY=${finalY}, effectType=${effectType}`);
+    console.log(`[DEBUG] window size: ${window.innerWidth}x${window.innerHeight}`);
+    
     // 伤害越大字体越大（1.2em ~ 4em）
     const logDmg = Math.log10(Math.max(1, damage));
     const scaleFont = Math.min(4, Math.max(1.2, 1.2 + logDmg * 0.35));

@@ -1,3 +1,10 @@
+// 全局定时器（防止重生/重置后重复创建）
+const _timers = {};
+function safeInterval(key, fn, ms) {
+    if (_timers[key]) clearInterval(_timers[key]);
+    _timers[key] = setInterval(fn, ms);
+}
+
 // 游戏状态
 let gameState = {
     gold: 0,
@@ -11,7 +18,8 @@ let gameState = {
     maxHP: 100,
     playerMaxHp: 500,  // 基础血量500
     playerCurrentHp: 500,
-    petPoints: 0,
+    rebirthPoints: 0,   // 重生点（重生获得，买宠物用，永久保留）
+    totalRebirths: 0,   // 累计重生次数
     artifacts: {},
     equipment: {
         weapon: null,
@@ -25,8 +33,31 @@ let gameState = {
     pets: {},
     activePet: null,
     totalDamage: 0,
+    totalBossKills: 0,
     startTime: Date.now(),
     lastSaveTime: Date.now()
+};
+
+// ===== 实时DPS追踪器 =====
+const dpsTracker = {
+    damageLog: [],      // 最近N次伤害记录 [{damage, timestamp}]
+    maxEntries: 20,     // 保留最近20次
+    lastDps: 0,         // 上次计算的DPS
+    addDamage(dmg) {
+        this.damageLog.push({ damage: dmg, timestamp: Date.now() });
+        if (this.damageLog.length > this.maxEntries) this.damageLog.shift();
+    },
+    getRealDps() {
+        const now = Date.now();
+        // 只算最近3秒的伤害
+        this.damageLog = this.damageLog.filter(e => now - e.timestamp < 3000);
+        if (this.damageLog.length < 2) return this.lastDps;
+        const totalDmg = this.damageLog.reduce((s, e) => s + e.damage, 0);
+        const timeSpan = (now - this.damageLog[0].timestamp) / 1000;
+        if (timeSpan < 0.1) return this.lastDps;
+        this.lastDps = Math.floor(totalDmg / timeSpan);
+        return this.lastDps;
+    }
 };
 
 // 神器配置（优化版 - 所有神器都有实际效果）
@@ -192,16 +223,16 @@ function generateMythicAbilities() {
 
 // 宠物配置
 const petConfig = [
-    {id: 'slime', name: '史莱姆', icon: '🟢', rarity: 'common', bonus: {dps: 5}, price: 100, desc: 'DPS +5'},
-    {id: 'cat', name: '小猫', icon: '🐱', rarity: 'common', bonus: {gold: 10}, price: 150, desc: '金币 +10%'},
-    {id: 'dog', name: '小狗', icon: '🐕', rarity: 'common', bonus: {dps: 10}, price: 200, desc: 'DPS +10'},
-    {id: 'bird', name: '小鸟', icon: '🐦', rarity: 'rare', bonus: {crit: 5}, price: 500, desc: '暴击率 +5%'},
-    {id: 'wolf', name: '小狼', icon: '🐺', rarity: 'rare', bonus: {attack: 20}, price: 800, desc: '攻击力 +20'},
-    {id: 'dragon', name: '幼龙', icon: '🐉', rarity: 'epic', bonus: {dps: 50, gold: 20}, price: 2000, desc: 'DPS +50, 金币 +20%'},
-    {id: 'phoenix', name: '凤凰', icon: '🦅', rarity: 'epic', bonus: {dps: 100, critDamage: 50}, price: 5000, desc: 'DPS +100, 暴击伤害 +50%'},
-    {id: 'unicorn', name: '独角兽', icon: '🦄', rarity: 'legendary', bonus: {allDamage: 30, maxHp: 500}, price: 15000, desc: '全伤害 +30%, 生命 +500'},
-    {id: 'tiger', name: '白虎', icon: '🐯', rarity: 'legendary', bonus: {attack: 100, crit: 20}, price: 20000, desc: '攻击 +100, 暴击率 +20%'},
-    {id: 'god', name: '神灵', icon: '🌟', rarity: 'mythic', bonus: {dps: 500, gold: 100, crit: 50}, price: 50000, desc: 'DPS +500, 金币 +100%'}
+    {id: 'slime', name: '史莱姆', icon: '🟢', rarity: 'common', bonus: {dps: 5}, rebirthCost: 3, desc: 'DPS +5'},
+    {id: 'cat', name: '小猫', icon: '🐱', rarity: 'common', bonus: {gold: 10}, rebirthCost: 5, desc: '金币 +10%'},
+    {id: 'dog', name: '小狗', icon: '🐕', rarity: 'common', bonus: {dps: 10}, rebirthCost: 8, desc: 'DPS +10'},
+    {id: 'bird', name: '小鸟', icon: '🐦', rarity: 'rare', bonus: {crit: 5}, rebirthCost: 15, desc: '暴击率 +5%'},
+    {id: 'wolf', name: '小狼', icon: '🐺', rarity: 'rare', bonus: {attack: 20}, rebirthCost: 25, desc: '攻击力 +20'},
+    {id: 'dragon', name: '幼龙', icon: '🐉', rarity: 'epic', bonus: {dps: 50, gold: 20}, rebirthCost: 60, desc: 'DPS +50, 金币 +20%'},
+    {id: 'phoenix', name: '凤凰', icon: '🦅', rarity: 'epic', bonus: {dps: 100, critDamage: 50}, rebirthCost: 120, desc: 'DPS +100, 暴击伤害 +50%'},
+    {id: 'unicorn', name: '独角兽', icon: '🦄', rarity: 'legendary', bonus: {allDamage: 30, maxHp: 500}, rebirthCost: 300, desc: '全伤害 +30%, 生命 +500'},
+    {id: 'tiger', name: '白虎', icon: '🐯', rarity: 'legendary', bonus: {attack: 100, crit: 20}, rebirthCost: 500, desc: '攻击 +100, 暴击率 +20%'},
+    {id: 'god', name: '神灵', icon: '🌟', rarity: 'mythic', bonus: {dps: 500, gold: 100, crit: 50}, rebirthCost: 1500, desc: 'DPS +500, 金币 +100%'}
 ];
 
 // Boss表情包（emoji，每个Boss不同）
@@ -243,7 +274,7 @@ function initGame() {
     startPoisonTick();
     startGameTimer();
     checkOfflineGains();
-    setInterval(saveGame, 30000);
+    safeInterval('autoSave', saveGame, 30000);
 }
 
 // 初始化神器（不要初始化！未解锁的神器应该是undefined）
@@ -369,6 +400,11 @@ function attackBoss(event) {
     if (Math.random() * 100 < critChance) {
         critMultiplier = 5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0);
         if (gameState.artifacts.fatalBlow > 0) critMultiplier *= Math.pow(1.5, gameState.artifacts.fatalBlow);
+        // 宠物暴击伤害加成
+        if (gameState.activePet) {
+            const _pet = petConfig.find(p => p.id === gameState.activePet);
+            if (_pet && _pet.bonus.critDamage) critMultiplier += _pet.bonus.critDamage / 100;
+        }
         isCrit = true;
         effectType = 'crit';
     }
@@ -395,8 +431,11 @@ function attackBoss(event) {
     }
     
     // 狂暴之斧
+    let isBerserk = false;
     if (gameState.artifacts.berserk > 0 && gameState.playerCurrentHp < gameState.playerMaxHp * 0.3) {
         damage *= Math.pow(1.5, gameState.artifacts.berserk);
+        isBerserk = true;
+        if (!isCrit) effectType = 'berserk';
     }
     
     // 致命之刃
@@ -434,6 +473,9 @@ function attackBoss(event) {
         gameState.totalDamage += damage;
         if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, effectType);
     }
+    
+    // 记录实时DPS
+    dpsTracker.addDamage(totalDamageDealt);
     
     // === 连锁闪电（点击也触发）===
     if (gameState.artifacts.chainLightning > 0) {
@@ -500,55 +542,61 @@ function showDamageNumber(damage, x, y, effectType) {
     dmgFloat.style.left = ((x || window.innerWidth / 2) + offsetX) + 'px';
     dmgFloat.style.top = ((y || window.innerHeight / 3) + offsetY) + 'px';
     
+    // 伤害越大字体越大（1.2em ~ 4em）
+    const logDmg = Math.log10(Math.max(1, damage));
+    const scaleFont = Math.min(4, Math.max(1.2, 1.2 + logDmg * 0.35));
+    
     // 根据特效类型设置不同的样式
     switch(effectType) {
         case 'crit':
             dmgFloat.style.color = '#ff0000';
-            dmgFloat.style.fontSize = '2.5em';
+            dmgFloat.style.fontSize = Math.min(5, scaleFont + 0.8) + 'em';
             dmgFloat.style.textShadow = '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000';
             dmgFloat.textContent = '⚡暴击! ' + dmgFloat.textContent + '⚡';
-            // 添加闪电特效
             createLightningEffect(x, y);
             break;
         case 'fire':
             dmgFloat.style.color = '#ff6600';
-            dmgFloat.style.fontSize = '1.8em';
+            dmgFloat.style.fontSize = scaleFont + 'em';
             dmgFloat.style.textShadow = '0 0 10px #ff6600, 0 0 20px #ff3300';
             dmgFloat.textContent = '🔥' + dmgFloat.textContent;
-            // 添加火焰粒子
             createFireParticles(x, y);
             break;
         case 'ice':
             dmgFloat.style.color = '#00ffff';
-            dmgFloat.style.fontSize = '1.8em';
+            dmgFloat.style.fontSize = scaleFont + 'em';
             dmgFloat.style.textShadow = '0 0 10px #00ffff, 0 0 20px #0088ff';
             dmgFloat.textContent = '❄️' + dmgFloat.textContent;
-            // 添加冰晶特效
             createIceEffect(x, y);
             break;
         case 'lightning':
             dmgFloat.style.color = '#aa00ff';
-            dmgFloat.style.fontSize = '2em';
+            dmgFloat.style.fontSize = Math.min(4.5, scaleFont + 0.4) + 'em';
             dmgFloat.style.textShadow = '0 0 15px #aa00ff, 0 0 30px #8800ff';
             dmgFloat.textContent = '💜' + dmgFloat.textContent;
-            // 添加连锁闪电
             createChainLightning(x, y);
             break;
         case 'poison':
             dmgFloat.style.color = '#00ff00';
-            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.fontSize = scaleFont + 'em';
             dmgFloat.style.textShadow = '0 0 10px #00ff00';
             dmgFloat.textContent = '☠️' + dmgFloat.textContent;
             break;
         case 'player':
             dmgFloat.style.color = '#ff4444';
-            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.fontSize = scaleFont + 'em';
             dmgFloat.style.textShadow = '0 0 8px #ff0000';
             dmgFloat.textContent = '-' + dmgFloat.textContent + ' ❤️';
             break;
+        case 'berserk':
+            dmgFloat.style.color = '#ff00ff';
+            dmgFloat.style.fontSize = Math.min(5, scaleFont + 0.6) + 'em';
+            dmgFloat.style.textShadow = '0 0 12px #ff00ff, 0 0 24px #ff0000';
+            dmgFloat.textContent = '😡狂暴! ' + dmgFloat.textContent;
+            break;
         default:
             dmgFloat.style.color = '#ffffff';
-            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.fontSize = scaleFont + 'em';
             dmgFloat.style.textShadow = '0 0 5px rgba(255,255,255,0.5)';
     }
     
@@ -641,6 +689,8 @@ function createChainLightning(x, y) {
 
 // 击杀Boss（额外奖励，因为之前每点伤害已经给金币了）
 function killBoss() {
+    if (gameState._bossDying) return; // 防止重复调用
+    gameState._bossDying = true;
     const goldReward = gameState.level * 5; // 击杀额外奖励
     let finalGold = goldReward;
     
@@ -672,6 +722,7 @@ function killBoss() {
     gameState.gold += Math.floor(finalGold);
     gameState.level++;
     if (gameState.level > gameState.maxLevel) gameState.maxLevel = gameState.level;
+    gameState.totalBossKills = (gameState.totalBossKills || 0) + 1;
     
     // 装备掉落
     dropEquipment();
@@ -752,9 +803,9 @@ function showDropNotification(item) {
 
 // Boss反击系统
 function startBossAttack() {
-    setInterval(() => {
-        if (gameState.currentHP > 0 && gameState.playerCurrentHp > 0) {
-            // Boss攻击玩家
+    safeInterval('bossAttack', () => {
+        if (gameState.playerCurrentHp > 0 && gameState.level > 0) {
+            // Boss攻击玩家（Boss总是存在的，不依赖currentHP > 0）
             const bossDamage = Math.floor(5 + gameState.level * 2);
             
             // 闪避判定
@@ -799,7 +850,7 @@ function startBossAttack() {
                 
                 updatePlayerHP();
                 
-                if (gameState.currentHP <= 0) killBoss();
+                // 荆棘反弹不会击杀Boss（伤害太小），跳过
                 if (gameState.playerCurrentHp <= 0) {
                     gameOver();
                 }
@@ -845,7 +896,7 @@ function updatePlayerHP() {
 // 游戏结束
 function gameOver() {
     document.getElementById('gameOverLevel').textContent = gameState.level;
-    document.getElementById('gameOverGold').textContent = formatNumber(Math.floor(gameState.gold * 0.1));
+    document.getElementById('gameOverGold').textContent = '100';
     document.getElementById('gameOverModal').classList.add('active');
 }
 
@@ -888,6 +939,8 @@ function resetAllGameData() {
         level: 1,
         currentHP: 100,
         maxHP: 100,
+        playerMaxHp: 500,
+        playerCurrentHp: 500,
         clickDamage: 1,
         clickLevel: 1,
         dps: 0,
@@ -896,9 +949,10 @@ function resetAllGameData() {
         artifacts: {},
         equipment: {},
         inventory: [],
-        pets: [],
+        pets: {},
         activePet: null,
-        petPoints: 0,
+        rebirthPoints: 0,
+        totalRebirths: 0,
         currentRebirth: 0,
         totalGoldEarned: 0,
         totalBossKills: 0,
@@ -921,6 +975,7 @@ function restartGame() {
 
 // 更新Boss（每个Boss都有不同的emoji）
 function updateBoss() {
+    gameState._bossDying = false; // 清除击杀锁
     gameState.maxHP = Math.floor(100 * Math.pow(1.8, gameState.level - 1));
     gameState.currentHP = gameState.maxHP;
     
@@ -1024,6 +1079,7 @@ function upgradeDPS() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.dpsLevel += actualUpgrades;
+        gameState.dps = gameState.dpsLevel;
         showNotification(`⚔️ 秒伤 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
@@ -1085,8 +1141,8 @@ function updateUpgradeCosts() {
 
 // 自动攻击（DPS）
 function startAutoAttack() {
-    setInterval(() => {
-        if (gameState.currentHP <= 0 || gameState.playerCurrentHp <= 0) return;
+    safeInterval('autoAttack', () => {
+        if (gameState.playerCurrentHp <= 0) return;
         
         // === 计算基础伤害 ===
         let baseDamage = calculateDPS();
@@ -1104,6 +1160,11 @@ function startAutoAttack() {
         if (Math.random() * 100 < critChance) {
             critMultiplier = 5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0);
             if (gameState.artifacts.fatalBlow > 0) critMultiplier *= Math.pow(1.5, gameState.artifacts.fatalBlow);
+            // 宠物暴击伤害加成
+            if (gameState.activePet) {
+                const pet = petConfig.find(p => p.id === gameState.activePet);
+                if (pet && pet.bonus.critDamage) critMultiplier += pet.bonus.critDamage / 100;
+            }
             isCrit = true;
         }
         
@@ -1125,8 +1186,11 @@ function startAutoAttack() {
             baseDamage *= (1 + gameState.artifacts.allDamage * 0.5);
         }
         // Berserk 低血量增伤
+        let isBerserk = false;
         if (gameState.artifacts.berserk > 0 && gameState.playerCurrentHp < gameState.playerMaxHp * 0.3) {
             baseDamage *= Math.pow(1.5, gameState.artifacts.berserk);
+            isBerserk = true;
+            if (!isCrit) effectType = 'berserk';
         }
         
         baseDamage *= critMultiplier;
@@ -1150,6 +1214,22 @@ function startAutoAttack() {
         let goldMultiplier = 1;
         if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
         gameState.gold += Math.floor(totalDamage * goldMultiplier);
+        
+        // === 记录实时DPS + 显示伤害数字 ===
+        dpsTracker.addDamage(totalDamage);
+        const bossArea = document.getElementById('bossClickArea');
+        if (bossArea) {
+            const rect = bossArea.getBoundingClientRect();
+            const bx = rect.left + rect.width / 2;
+            const by = rect.top + rect.height / 2;
+            if (isCrit) {
+                showDamageNumber(totalDamage, bx, by, 'crit');
+            } else if (isBerserk) {
+                showDamageNumber(totalDamage, bx, by, 'berserk');
+            } else if (effectType !== 'normal') {
+                showDamageNumber(totalDamage, bx, by, effectType);
+            }
+        }
         
         // === 特效 ===
         if (chainDamage > 0) createChainLightningEffect();
@@ -1240,7 +1320,7 @@ function applyPoison() {
 }
 
 function startPoisonTick() {
-    setInterval(() => {
+    safeInterval('poisonTick', () => {
         if (poisonStacks > 0 && gameState.currentHP > 0) {
             // 毒液金币加成（受金币磁体影响）
             let goldMultiplier = 1;
@@ -1942,9 +2022,9 @@ function renderPets() {
             <div class="pet-name" style="color: ${rarityColors[pet.rarity]}">${pet.name}</div>
             <div class="pet-rarity" style="color: ${rarityColors[pet.rarity]}">${rarityNames[pet.rarity]}</div>
             <div class="pet-bonus">${pet.desc}</div>
-            <div class="pet-price">💰 ${formatNumber(pet.price)}</div>
+            <div class="pet-price">🔄 ${pet.rebirthCost} 重生点</div>
             <button class="artifact-buy-btn" onclick="buyPet('${pet.id}')" 
-                    ${!owned && gameState.gold >= pet.price ? '' : 'disabled'}>
+                    ${!owned && gameState.rebirthPoints >= pet.rebirthCost ? '' : 'disabled'}>
                 ${owned ? '已拥有' : '购买'}
             </button>
         `;
@@ -1952,21 +2032,21 @@ function renderPets() {
         shopGrid.appendChild(card);
     });
     
-    document.getElementById('petPointsDisplay').textContent = formatNumber(gameState.petPoints);
+    document.getElementById('petPointsDisplay').textContent = formatNumber(gameState.rebirthPoints || 0);
 }
 
 function buyPet(petId) {
     const pet = petConfig.find(p => p.id === petId);
     
-    if (gameState.gold >= pet.price) {
-        gameState.gold -= pet.price;
+    if (gameState.rebirthPoints >= pet.rebirthCost) {
+        gameState.rebirthPoints -= pet.rebirthCost;
         gameState.pets[pet.id] = 1;
-        showNotification(`购买宠物: ${pet.name}!`);
+        showNotification(`购买宠物: ${pet.name}! -${pet.rebirthCost} 重生点`);
         renderPets();
         updateDisplay();
         saveGame();
     } else {
-        showNotification('金币不足!');
+        showNotification(`重生点不足! 需要 ${pet.rebirthCost} 重生点`);
     }
 }
 
@@ -1988,15 +2068,24 @@ function unequipPet() {
     saveGame();
 }
 
-// ===== 重生系统（只给宠物点） =====
+// ===== 重生系统（重生点买宠物，宠物永久保留）=====
+function calculateRebirthReward() {
+    // 等级越高点数越多，指数增长
+    const lv = gameState.maxLevel;
+    let points = Math.floor(lv * 0.5);
+    if (lv >= 30) points += Math.floor((lv - 30) * 1);
+    if (lv >= 50) points += Math.floor((lv - 50) * 3);
+    if (lv >= 100) points += Math.floor((lv - 100) * 5);
+    return Math.max(1, points);
+}
+
 function openRebirthModal() {
     if (gameState.maxLevel < 10) {
         showNotification('需要达到第10关才能重生!');
         return;
     }
-    
-    const petReward = Math.floor(gameState.maxLevel * 0.5);
-    document.getElementById('rebirthReward').textContent = `${petReward} 宠物点 (神器用金币购买!)`;
+    const rebirthReward = calculateRebirthReward();
+    document.getElementById('rebirthReward').textContent = `${rebirthReward} 重生点 (宠物和神器永久保留!)`;
     document.getElementById('rebirthModal').classList.add('active');
 }
 
@@ -2005,14 +2094,14 @@ function closeRebirthModal() {
 }
 
 function rebirth() {
-    const petReward = Math.floor(gameState.maxLevel * 0.5);
+    const rebirthReward = calculateRebirthReward();
     
-    gameState.petPoints += petReward;
-    
-    // 只保存神器（唯一永久保留的）
+    // 保留永久数据
     const savedArtifacts = {...gameState.artifacts};
-    
-    const savedPets = {...gameState.pets};  // 保留已购买的宠物
+    const savedPets = {...gameState.pets};
+    const savedRebirthPoints = gameState.rebirthPoints + rebirthReward;
+    const savedTotalRebirths = (gameState.totalRebirths || 0) + 1;
+    const savedTotalBossKills = gameState.totalBossKills || 0;
     
     gameState = {
         gold: 0,
@@ -2026,7 +2115,9 @@ function rebirth() {
         maxHP: 100,
         playerMaxHp: 500,
         playerCurrentHp: 500,
-        artifacts: savedArtifacts,  // 神器永久保存！
+        rebirthPoints: savedRebirthPoints,  // 重生点永久保留
+        totalRebirths: savedTotalRebirths,  // 累计重生次数
+        artifacts: savedArtifacts,  // 神器永久保存
         equipment: {
             weapon: null,
             helmet: null,
@@ -2036,10 +2127,10 @@ function rebirth() {
             boots: null
         },
         inventory: [],
-        pets: savedPets,           // 宠物也保留！
-        petPoints: gameState.petPoints,
+        pets: savedPets,           // 宠物永久保留
         activePet: null,
         totalDamage: 0,
+        totalBossKills: savedTotalBossKills,
         startTime: Date.now(),
         lastSaveTime: Date.now()
     };
@@ -2056,7 +2147,7 @@ function rebirth() {
     renderArtifacts();
     renderInventory();
     renderPets();
-    showNotification(`重生成功! 只有神器永久保留! 获得 ${petReward} 宠物点!`);
+    showNotification(`重生成功! 神器+宠物永久保留! 获得 ${rebirthReward} 重生点! (累计: ${savedRebirthPoints})`);
     saveGame();
 }
 
@@ -2065,7 +2156,9 @@ function updateDisplay() {
     document.getElementById('gold').textContent = formatNumber(gameState.gold);
     document.getElementById('currentLevel').textContent = gameState.level;
     document.getElementById('clickDamage').textContent = formatNumber(calculateAttack());
-    document.getElementById('dps').textContent = formatNumber(calculateDPS());
+    // 实时DPS：优先显示实际DPS，无数据时显示理论DPS
+    const realDps = dpsTracker.getRealDps();
+    document.getElementById('dps').textContent = formatNumber(realDps > 0 ? realDps : calculateDPS());
     // 快捷数据条的金币显示
     const gd = document.getElementById('goldDisplay');
     if (gd) gd.textContent = formatNumber(gameState.gold);
@@ -2075,6 +2168,14 @@ function updateDisplay() {
     document.getElementById('clickLevel').textContent = gameState.clickLevel;
     document.getElementById('dpsLevel').textContent = gameState.dpsLevel;
     document.getElementById('rebirthBtn').disabled = gameState.maxLevel < 10;
+    
+    // 重生点显示
+    const rps = document.getElementById('rebirthPointsDisplay');
+    if (rps) rps.textContent = gameState.rebirthPoints || 0;
+    const rps2 = document.getElementById('rebirthPointsDisplay2');
+    if (rps2) rps2.textContent = gameState.rebirthPoints || 0;
+    const trc = document.getElementById('totalRebirthsDisplay');
+    if (trc) trc.textContent = gameState.totalRebirths || 0;
     
     document.querySelectorAll('.upgrade-btn')[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
     document.querySelectorAll('.upgrade-btn')[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
@@ -2151,6 +2252,9 @@ function updateStatsPanel() {
     }
     
     document.getElementById('statDpsTotal').textContent = formatNumber(totalDps);
+    // 实时DPS显示
+    const realDpsEl = document.getElementById('statRealDps');
+    if (realDpsEl) realDpsEl.textContent = formatNumber(dpsTracker.getRealDps());
     renderBreakdownList('dpsBreakdown', dpsItems, totalDps);
     
     // ========== 金币分解 ==========
@@ -2317,12 +2421,21 @@ function loadGame() {
         if (!gameState.playerMaxHp) gameState.playerMaxHp = 500;
         if (!gameState.playerCurrentHp) gameState.playerCurrentHp = gameState.playerMaxHp;
         if (!gameState.lastSaveTime) gameState.lastSaveTime = Date.now();
+        // 兼容旧存档：新字段默认值
+        if (gameState.rebirthPoints === undefined) gameState.rebirthPoints = 0;
+        if (gameState.totalRebirths === undefined) gameState.totalRebirths = 0;
+        if (gameState.totalBossKills === undefined) gameState.totalBossKills = 0;
+        // 旧存档 petPoints 迁移到 rebirthPoints
+        if (gameState.petPoints && !gameState.rebirthPoints) {
+            gameState.rebirthPoints = gameState.petPoints;
+            delete gameState.petPoints;
+        }
     }
 }
 
 // 游戏计时器
 function startGameTimer() {
-    setInterval(() => {
+    safeInterval('gameTimer', () => {
         // 生命回复
         if (gameState.artifacts.regen > 0 && gameState.playerCurrentHp < gameState.playerMaxHp) {
             const regenAmount = gameState.playerMaxHp * 0.01 * gameState.artifacts.regen;

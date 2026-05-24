@@ -33,6 +33,7 @@
             <div class="top-actions">
                 <button class="btn btn-gold" onclick="openArtifactModal()">🗡️ 神器</button>
                 <button class="btn btn-red" id="rebirthBtn" onclick="openRebirthModal()" disabled>🔄 重生</button>
+                <span style="color:var(--gold);font-size:0.85em;margin-left:6px;">🔄 <span id="rebirthPointsDisplay">0</span></span>
             </div>
         </div>
 
@@ -133,6 +134,7 @@
                 <div class="sblock">
                     <div class="sblock-head">总 DPS</div>
                     <div class="sblock-main dps" id="statDpsTotal">0</div>
+                    <div class="sblock-head" style="font-size:0.75em;color:var(--text-dim);margin-top:2px;">实时 DPS: <span id="statRealDps" style="color:var(--gold);">0</span></div>
                     <div class="sbreakdown" id="dpsBreakdown"></div>
                 </div>
             </div>
@@ -210,6 +212,16 @@
                         <div class="stwo-item">
                             <div class="stwo-label">击杀Boss</div>
                             <div class="stwo-value" id="statTotalKills">0</div>
+                        </div>
+                    </div>
+                    <div class="stwo" style="margin-top:8px;">
+                        <div class="stwo-item">
+                            <div class="stwo-label">重生次数</div>
+                            <div class="stwo-value" id="totalRebirthsDisplay" style="color:var(--gold);">0</div>
+                        </div>
+                        <div class="stwo-item">
+                            <div class="stwo-label">重生点</div>
+                            <div class="stwo-value" id="rebirthPointsDisplay2" style="color:var(--gold);">0</div>
                         </div>
                     </div>
                 </div>
@@ -313,11 +325,13 @@
         </div>
         <div class="modal-bd">
             <div style="text-align:center;margin-bottom:14px;color:var(--text-dim);font-size:0.85em;">
-                宠物点: <span style="color:var(--gold);font-weight:700;" id="petPointsDisplay">0</span>
+                重生点: <span style="color:var(--gold);font-weight:700;" id="petPointsDisplay">0</span>
                 &nbsp;|&nbsp;
                 当前宠物: <span id="activePetDisplay" style="color:var(--gold);">无</span>
             </div>
             <div class="pet-grid" id="petGrid"></div>
+            <h3 style="color:var(--gold);margin:16px 0 8px;font-size:1em;">🏪 宠物商店</h3>
+            <div class="pet-grid" id="petShopGrid"></div>
         </div>
     </div>
 </div>
@@ -333,10 +347,28 @@
             <div class="rb-info">
                 <p>重生将重置所有金币、关卡、装备、背包，</p>
                 <p>但 <strong style="color:var(--gold);">神器</strong> 和 <strong style="color:var(--gold);">宠物</strong> 将永久保留！</p>
-                <p style="margin-top:14px;">重生生后您将获得</p>
-                <p id="rebirthReward" style="font-size:1.2em;color:var(--gold);font-weight:700;margin-top:6px;">0 宠物点</p>
+                <p style="margin-top:8px;">等级越高，获得的重生点越多！</p>
+                <p style="margin-top:14px;">重生后您将获得</p>
+                <p id="rebirthReward" style="font-size:1.2em;color:var(--gold);font-weight:700;margin-top:6px;">0 重生点</p>
             </div>
             <button class="rb-btn" onclick="rebirth()">⚠️ 确认重生</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======================== 游戏结束窗口 ======================== -->
+<div class="modal-overlay" id="gameOverModal">
+    <div class="modal-win" style="max-width:360px;">
+        <div class="modal-hd">
+            <h2>💀 你被Boss击败了!</h2>
+        </div>
+        <div class="modal-bd" style="text-align:center;">
+            <p style="font-size:1.1em;margin-bottom:12px;">到达关卡: <span id="gameOverLevel" style="color:var(--gold);font-weight:700;">0</span></p>
+            <p style="margin-bottom:8px;color:var(--text-dim);">损失金币: <span id="gameOverGold" style="color:#ff4444;">0</span></p>
+            <p style="margin-bottom:16px;color:var(--text-dim);font-size:0.9em;">复活需要 <span style="color:var(--gold);">100</span> 金币，等级降低50%</p>
+            <button class="rb-btn" onclick="revive()" style="margin-bottom:8px;">💪 立即复活</button>
+            <br>
+            <button class="btn-sm" onclick="document.getElementById('gameOverModal').classList.remove('active')" style="margin-top:4px;">关闭</button>
         </div>
     </div>
 </div>

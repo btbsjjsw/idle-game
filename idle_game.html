@@ -82,13 +82,23 @@
         <!-- 升级面板 -->
         <div class="upgrade-panel">
             <h2>⚒️ 升级面板</h2>
+            <div class="upgrade-multiplier">
+                <span>升级数量:</span>
+                <select id="upgradeMultiplier" onchange="updateUpgradeCosts()">
+                    <option value="1">x1</option>
+                    <option value="10">x10</option>
+                    <option value="50">x50</option>
+                    <option value="100">x100</option>
+                    <option value="max">MAX</option>
+                </select>
+            </div>
             <div class="upgrade-buttons">
-                <button class="upgrade-btn" onclick="upgradeClick()">
+                <button class="upgrade-btn" onclick="upgradeClick(document.getElementById('upgradeMultiplier').value)">
                     <div class="upgrade-name">升级点击</div>
                     <div class="upgrade-cost">费用: <span id="clickCost">10</span> 💰</div>
                     <div class="upgrade-level">等级: <span id="clickLevel">1</span></div>
                 </button>
-                <button class="upgrade-btn" onclick="upgradeDPS()">
+                <button class="upgrade-btn" onclick="upgradeDPS(document.getElementById('upgradeMultiplier').value)">
                     <div class="upgrade-name">升级秒伤</div>
                     <div class="upgrade-cost">费用: <span id="dpsCost">10</span> 💰</div>
                     <div class="upgrade-level">等级: <span id="dpsLevel">0</span></div>
@@ -111,6 +121,16 @@
                 <button class="modal-close-btn" onclick="closeArtifactModal()">✕</button>
             </div>
             <div class="modal-body">
+                <div class="artifact-multiplier">
+                    <span>升级数量:</span>
+                    <select id="artifactMultiplier" onchange="renderArtifacts()">
+                        <option value="1">x1</option>
+                        <option value="10">x10</option>
+                        <option value="50">x50</option>
+                        <option value="100">x100</option>
+                        <option value="max">MAX</option>
+                    </select>
+                </div>
                 <div class="artifact-grid" id="artifactGrid"></div>
             </div>
         </div>

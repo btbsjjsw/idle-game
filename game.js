@@ -833,8 +833,11 @@ function updateHPBar() {
 
 // 升级点击伤害
 // ===== 批量升级点击伤害 =====
-function upgradeClick(multiplier = '1') {
+function upgradeClick() {
+    const select = document.getElementById('upgradeMultiplier');
+    const multiplier = select ? select.value : '1';
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('click') : parseInt(multiplier);
+    
     if (maxUpgrades <= 0) {
         showNotification('金币不足!');
         return;
@@ -866,8 +869,11 @@ function upgradeClick(multiplier = '1') {
 }
 
 // ===== 批量升级秒伤 =====
-function upgradeDPS(multiplier = '1') {
+function upgradeDPS() {
+    const select = document.getElementById('upgradeMultiplier');
+    const multiplier = select ? select.value : '1';
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('dps') : parseInt(multiplier);
+    
     if (maxUpgrades <= 0) {
         showNotification('金币不足!');
         return;
@@ -1254,7 +1260,7 @@ function renderArtifacts() {
             <div class="artifact-name">${artifact.name}</div>
             <div class="artifact-level">等级: ${level}</div>
             <div class="artifact-desc">${artifact.desc}</div>
-            <button class="artifact-buy-btn" onclick="upgradeArtifactBatch('${artifact.id}', document.getElementById('artifactMultiplier').value)" 
+            <button class="artifact-buy-btn" onclick="upgradeArtifact('${artifact.id}')" 
                     ${canAfford ? '' : 'disabled'}>
                 ⬆️ x${maxUpgrades} (${costText} 💰)
             </button>
@@ -1304,10 +1310,9 @@ function buyRandomArtifact() {
 
 // ===== 升级神器（用金币）- 批量升级！=====
 function upgradeArtifact(artifactId) {
-    upgradeArtifactBatch(artifactId, '1');
-}
-
-function upgradeArtifactBatch(artifactId, multiplier = '1') {
+    const select = document.getElementById('artifactMultiplier');
+    const multiplier = select ? select.value : '1';
+    
     if (gameState.artifacts[artifactId] === undefined) {
         showNotification('该神器未解锁!');
         return;

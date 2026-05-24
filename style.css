@@ -92,6 +92,65 @@ body {
     font-family: monospace;
 }
 
+/* 详细面板 - 总计行 */
+.stats-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    background: #222;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.stats-total-row .stats-value {
+    color: #ffd700;
+    font-size: 1.1em;
+}
+
+/* DPS/金币 分解列表 */
+.stats-dps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stats-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 0.8em;
+    border-radius: 4px;
+    background: #1a1a1a;
+}
+
+.stats-breakdown-row .source-name {
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+
+.stats-breakdown-row .source-value {
+    color: #00ff00;
+    font-family: monospace;
+    margin-right: 8px;
+}
+
+.stats-breakdown-row .source-pct {
+    color: #888;
+    font-size: 0.85em;
+    min-width: 45px;
+    text-align: right;
+}
+
+.stats-breakdown-row.is-zero {
+    opacity: 0.4;
+}
+
 /* 顶部资源栏 */
 .top-bar {
     display: flex;

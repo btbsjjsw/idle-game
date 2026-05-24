@@ -6,261 +6,470 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #1a1a1a;
+    color: #d4af37;
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
+    overflow-x: hidden;
 }
 
-.container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+.game-container {
     max-width: 900px;
-    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+    min-height: 100vh;
+}
+
+/* 顶部资源栏 */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.resource {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2em;
+}
+
+.resource .icon {
+    font-size: 1.5em;
+}
+
+.resource .label {
+    color: #888;
+}
+
+.resource .value {
+    color: #d4af37;
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+.rebirth-btn {
+    background: linear-gradient(135deg, #8b0000 0%, #ff0000 100%);
+    color: white;
+    border: 2px solid #d4af37;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.rebirth-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+.rebirth-btn:disabled {
+    background: #333;
+    border-color: #555;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* Boss区域 */
+.boss-area {
+    background: #0a0a0a;
+    border: 3px solid #d4af37;
+    border-radius: 15px;
     padding: 30px;
-}
-
-header {
+    margin-bottom: 20px;
     text-align: center;
-    margin-bottom: 30px;
 }
 
-header h1 {
-    color: #667eea;
-    font-size: 2.5em;
+.boss-info {
+    margin-bottom: 20px;
+}
+
+.boss-name {
+    font-size: 2em;
+    color: #d4af37;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
     margin-bottom: 10px;
 }
 
-.subtitle {
-    color: #666;
+.boss-level {
+    font-size: 1.2em;
+    color: #888;
+}
+
+/* 血条 */
+.boss-hp-bar {
+    width: 80%;
+    margin: 0 auto 30px;
+    height: 40px;
+    background: #333;
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b0000 0%, #ff0000 50%, #ff4444 100%);
+    border-radius: 18px;
+    transition: width 0.3s ease;
+    width: 100%;
+}
+
+.hp-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 0 5px black;
     font-size: 1.1em;
 }
 
-.resources {
+/* Boss点击区域 */
+.boss-click-area {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    cursor: pointer;
+    transition: transform 0.1s;
     display: flex;
-    justify-content: space-around;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f7f9fc;
-    border-radius: 15px;
+    align-items: center;
+    justify-content: center;
 }
 
-.resource-item {
+.boss-click-area:active {
+    transform: scale(0.95);
+}
+
+.boss-icon {
+    font-size: 150px;
+    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.8));
+    transition: all 0.1s;
+}
+
+.boss-icon.hit {
+    animation: hitShake 0.2s ease;
+}
+
+@keyframes hitShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* 伤害统计 */
+.damage-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
 }
 
-.resource-icon {
-    font-size: 2em;
-}
-
-.resource-label {
-    color: #666;
+.stat-label {
+    color: #888;
     font-size: 0.9em;
 }
 
-.resource-value {
+.stat-value {
+    color: #d4af37;
     font-size: 1.8em;
     font-weight: bold;
-    color: #667eea;
 }
 
-.click-area {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.mine-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 30px 60px;
-    border-radius: 15px;
-    font-size: 1.2em;
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.3s;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin: 0 auto;
-}
-
-.mine-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
-}
-
-.mine-btn:active {
-    transform: translateY(0);
-}
-
-.btn-icon {
-    font-size: 3em;
-}
-
-.btn-text {
-    font-size: 1.5em;
-    font-weight: bold;
-}
-
-.btn-hint {
-    font-size: 0.9em;
-    opacity: 0.9;
-}
-
-.upgrades {
-    margin-bottom: 30px;
-}
-
-.upgrades h2 {
-    color: #667eea;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.upgrade-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.upgrade-item {
-    background: #f7f9fc;
+/* 升级面板 */
+.upgrade-panel {
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
     padding: 20px;
-    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.upgrade-panel h2 {
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 20px;
+    color: #d4af37;
 }
 
-.upgrade-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+.upgrade-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
 }
 
-.upgrade-item h3 {
-    color: #333;
-    margin-bottom: 10px;
-    font-size: 1.3em;
-}
-
-.upgrade-item .description {
-    color: #666;
-    margin-bottom: 15px;
-    font-size: 0.9em;
-}
-
-.cost {
-    color: #667eea;
-    font-weight: bold;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-}
-
-.buy-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 30px;
-    border-radius: 8px;
-    font-size: 1em;
+.upgrade-btn {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 20px;
+    color: #d4af37;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s;
 }
 
-.buy-btn:hover {
-    background: #764ba2;
+.upgrade-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
 }
 
-.buy-btn:disabled {
-    background: #ccc;
+.upgrade-btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-.stats {
-    background: #f7f9fc;
-    padding: 20px;
-    border-radius: 15px;
+.upgrade-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 
-.stats h2 {
-    color: #667eea;
-    margin-bottom: 15px;
+.upgrade-cost {
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.upgrade-level {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* 神器商店 */
+.artifact-shop {
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.artifact-shop h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #d4af37;
+}
+
+.artifact-points {
+    color: #ffd700;
+    font-size: 0.9em;
+}
+
+.artifact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.artifact-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s;
+}
+
+.artifact-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+.artifact-icon {
+    font-size: 3em;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.artifact-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #d4af37;
+    margin-bottom: 5px;
     text-align: center;
 }
 
-.stats p {
-    color: #666;
+.artifact-level {
+    color: #888;
+    font-size: 0.9em;
+    text-align: center;
     margin-bottom: 10px;
-    font-size: 1em;
 }
 
-.stats span {
-    color: #667eea;
+.artifact-desc {
+    color: #aaa;
+    font-size: 0.85em;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.artifact-buy-btn {
+    background: linear-gradient(135deg, #8b0000 0%, #ff0000 100%);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
     font-weight: bold;
+    transition: all 0.3s;
 }
 
-@keyframes clickEffect {
+.artifact-buy-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.artifact-buy-btn:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* 模态框 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    border: 3px solid #d4af37;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-content h2 {
+    color: #d4af37;
+    margin-bottom: 20px;
+}
+
+.modal-content p {
+    color: #aaa;
+    margin-bottom: 20px;
+}
+
+.rebirth-reward {
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    color: #ffd700;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.confirm-btn {
+    background: linear-gradient(135deg, #8b0000 0%, #ff0000 100%);
+    color: white;
+    border: 2px solid #d4af37;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.confirm-btn:hover {
+    transform: scale(1.05);
+}
+
+.cancel-btn {
+    background: #333;
+    color: #aaa;
+    border: 2px solid #555;
+    padding: 10px 30px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.cancel-btn:hover {
+    background: #444;
+}
+
+/* 伤害浮动文字 */
+.damage-float {
+    position: fixed;
+    pointer-events: none;
+    font-size: 2em;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    animation: floatUp 1s ease-out forwards;
+    z-index: 999;
+}
+
+@keyframes floatUp {
     0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(0.95);
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
     100% {
-        transform: scale(1);
-    }
-}
-
-.clicking {
-    animation: clickEffect 0.1s ease;
-}
-
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #667eea;
-    color: white;
-    padding: 15px 25px;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.3s ease;
-    z-index: 1000;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(400px);
         opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
+        transform: translateY(-100px) scale(1.5);
     }
 }
 
+/* 响应式设计 */
 @media (max-width: 768px) {
-    .resources {
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .upgrade-grid {
+    .upgrade-buttons {
         grid-template-columns: 1fr;
     }
 
-    header h1 {
-        font-size: 1.8em;
+    .artifact-grid {
+        grid-template-columns: 1fr;
     }
 
-    .mine-btn {
-        padding: 20px 40px;
+    .boss-icon {
+        font-size: 100px;
     }
+
+    .boss-click-area {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+/* Boss名字列表（燃气表型号） */
+.boss-names {
+    display: none;
 }

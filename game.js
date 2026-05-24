@@ -460,6 +460,7 @@ function attackBoss(event) {
     
     updateHPBar();
     updateDisplay();
+    updateStatsPanel();
     saveGame();
 }
 
@@ -1123,6 +1124,7 @@ function startAutoAttack() {
             
             updateHPBar();
             updateDisplay();
+            updateStatsPanel();
         }
     }, 1000);
 }
@@ -2187,18 +2189,15 @@ function renderBreakdownList(containerId, items, total) {
     container.innerHTML = '';
     
     items.forEach(item => {
-        const pct = total > 0 ? (item.value / total * 100) : 0;
+        const pct = total > 0 ? Math.min(100, (item.value / total * 100)) : 0;
         const row = document.createElement('div');
-        const isZero = Math.abs(item.value) < 0.01 && item.mult !== 1;
-        row.className = 'stats-breakdown-row' + (isZero ? ' is-zero' : '');
+        const isZero = Math.abs(item.value) < 0.01;
+        row.className = 'stat-breakdown-row' + (isZero ? ' is-zero' : '');
         
         let valueStr = '';
         if (item.mult === 1) {
-            // 加法来源，显示 +value
-            if (item.value >= 0) valueStr = '+' + formatNumber(item.value);
-            else valueStr = formatNumber(item.value);
+            valueStr = item.value >= 0 ? '+' + formatNumber(item.value) : formatNumber(item.value);
         } else {
-            // 乘法来源，显示 ×value
             valueStr = '×' + item.value.toFixed(2);
         }
         if (item.note) valueStr += ' ' + item.note;

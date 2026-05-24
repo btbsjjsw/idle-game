@@ -412,14 +412,27 @@ function attackBoss(event) {
     // 计算总伤害
     let totalDamageDealt = damage * hits;
     
+    // 金币加成（受金币磁体影响）
+    let goldMultiplier = 1;
+    if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+    
     // 每点伤害给1金币
-    gameState.gold += Math.floor(totalDamageDealt);
+    gameState.gold += Math.floor(totalDamageDealt * goldMultiplier);
     
     // 应用伤害
     for (let i = 0; i < hits; i++) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
         if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, effectType);
+    }
+    
+    // === 连锁闪电（点击也触发）===
+    if (gameState.artifacts.chainLightning > 0) {
+        const chainDamage = totalDamageDealt * 0.5 * gameState.artifacts.chainLightning;
+        gameState.currentHP -= chainDamage;
+        gameState.totalDamage += chainDamage;
+        gameState.gold += Math.floor(chainDamage * goldMultiplier); // 连锁闪电也有金币
+        createChainLightningEffect();
     }
     
     // === 吸血效果 ===
@@ -441,11 +454,6 @@ function attackBoss(event) {
     // === 毒液效果 ===
     if (gameState.artifacts.poison > 0 && gameState.currentHP > 0) {
         applyPoison();
-    }
-    
-    // === 连锁闪电 ===
-    if (gameState.artifacts.chainLightning > 0) {
-        createChainLightningEffect();
     }
     
     if (gameState.currentHP <= 0) killBoss();
@@ -1086,11 +1094,18 @@ function startAutoAttack() {
             
             gameState.currentHP -= damage;
             gameState.totalDamage += damage;
-            gameState.gold += Math.floor(damage);
+            
+            // 金币加成（受金币磁体影响）
+            let goldMultiplier = 1;
+            if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+            gameState.gold += Math.floor(damage * goldMultiplier);
             
             // 连锁闪电（对假目标额外伤害）
             if (gameState.artifacts.chainLightning > 0) {
                 const chainDamage = damage * 0.5 * gameState.artifacts.chainLightning;
+                gameState.currentHP -= chainDamage; // 实际扣减连锁闪电伤害
+                gameState.totalDamage += chainDamage;
+                gameState.gold += Math.floor(chainDamage * goldMultiplier); // 连锁闪电也有金币
                 // 创建连锁闪电特效
                 createChainLightningEffect();
             }
@@ -1183,9 +1198,13 @@ function applyPoison() {
 function startPoisonTick() {
     setInterval(() => {
         if (poisonStacks > 0 && gameState.currentHP > 0) {
+            // 毒液金币加成（受金币磁体影响）
+            let goldMultiplier = 1;
+            if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+            
             gameState.currentHP -= poisonDamagePerTick;
             gameState.totalDamage += poisonDamagePerTick;
-            gameState.gold += Math.floor(poisonDamagePerTick);
+            gameState.gold += Math.floor(poisonDamagePerTick * goldMultiplier);
             poisonStacks--;
             
             // 显示毒伤数字

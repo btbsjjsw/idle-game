@@ -284,6 +284,7 @@ function calculateCrit() {
 // 攻击Boss
 function attackBoss(event) {
     let damage = calculateAttack();
+    let effectType = 'normal';
     
     // 攻击速度（多重点击）
     let hits = 1;
@@ -305,12 +306,29 @@ function attackBoss(event) {
         critMultiplier = 5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0);
         if (gameState.artifacts.fatalBlow > 0) critMultiplier *= Math.pow(1.5, gameState.artifacts.fatalBlow);
         isCrit = true;
+        effectType = 'crit';
     }
     
-    // 元素伤害
-    if (gameState.artifacts.fireSoul > 0) damage *= Math.pow(2, gameState.artifacts.fireSoul);
-    if (gameState.artifacts.lightning > 0) damage *= Math.pow(2, gameState.artifacts.lightning);
-    if (gameState.artifacts.iceHeart > 0) damage *= Math.pow(2, gameState.artifacts.iceHeart);
+    // 火焰伤害
+    let hasFire = false;
+    if (gameState.artifacts.fireSoul > 0) {
+        damage *= Math.pow(2, gameState.artifacts.fireSoul);
+        hasFire = true;
+    }
+    
+    // 冰冻伤害
+    let hasIce = false;
+    if (gameState.artifacts.iceHeart > 0) {
+        damage *= Math.pow(2, gameState.artifacts.iceHeart);
+        hasIce = true;
+    }
+    
+    // 闪电伤害
+    let hasLightning = false;
+    if (gameState.artifacts.lightning > 0) {
+        damage *= Math.pow(2, gameState.artifacts.lightning);
+        hasLightning = true;
+    }
     
     // 狂暴之斧
     if (gameState.artifacts.berserk > 0 && gameState.playerCurrentHp < gameState.playerMaxHp * 0.3) {
@@ -327,6 +345,13 @@ function attackBoss(event) {
         damage *= (1 + gameState.artifacts.allDamage * 0.5);
     }
     
+    // 决定主要特效（暴击优先）
+    if (!isCrit) {
+        if (hasLightning) effectType = 'lightning';
+        else if (hasIce) effectType = 'ice';
+        else if (hasFire) effectType = 'fire';
+    }
+    
     damage *= critMultiplier;
     
     // 计算总伤害
@@ -339,7 +364,7 @@ function attackBoss(event) {
     for (let i = 0; i < hits; i++) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
-        if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, isCrit);
+        if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, effectType);
     }
     
     // === 吸血效果 ===
@@ -378,22 +403,145 @@ function showLifestealNumber(amount, x, y) {
     setTimeout(() => float.remove(), 1000);
 }
 
-// 显示伤害数字
-function showDamageNumber(damage, x, y, isCrit) {
+// 显示伤害数字（支持多种元素特效）
+function showDamageNumber(damage, x, y, effectType) {
     const dmgFloat = document.createElement('div');
     dmgFloat.className = 'damage-float';
     dmgFloat.textContent = formatNumber(Math.floor(damage));
     dmgFloat.style.left = (x || window.innerWidth / 2) + 'px';
     dmgFloat.style.top = (y || window.innerHeight / 3) + 'px';
     
-    if (isCrit) {
-        dmgFloat.style.color = '#ff0000';
-        dmgFloat.style.fontSize = '2.5em';
-        dmgFloat.textContent = '暴击! ' + dmgFloat.textContent;
+    // 根据特效类型设置不同的样式
+    switch(effectType) {
+        case 'crit':
+            dmgFloat.style.color = '#ff0000';
+            dmgFloat.style.fontSize = '2.5em';
+            dmgFloat.style.textShadow = '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000';
+            dmgFloat.textContent = '⚡暴击! ' + dmgFloat.textContent + '⚡';
+            // 添加闪电特效
+            createLightningEffect(x, y);
+            break;
+        case 'fire':
+            dmgFloat.style.color = '#ff6600';
+            dmgFloat.style.fontSize = '1.8em';
+            dmgFloat.style.textShadow = '0 0 10px #ff6600, 0 0 20px #ff3300';
+            dmgFloat.textContent = '🔥' + dmgFloat.textContent;
+            // 添加火焰粒子
+            createFireParticles(x, y);
+            break;
+        case 'ice':
+            dmgFloat.style.color = '#00ffff';
+            dmgFloat.style.fontSize = '1.8em';
+            dmgFloat.style.textShadow = '0 0 10px #00ffff, 0 0 20px #0088ff';
+            dmgFloat.textContent = '❄️' + dmgFloat.textContent;
+            // 添加冰晶特效
+            createIceEffect(x, y);
+            break;
+        case 'lightning':
+            dmgFloat.style.color = '#aa00ff';
+            dmgFloat.style.fontSize = '2em';
+            dmgFloat.style.textShadow = '0 0 15px #aa00ff, 0 0 30px #8800ff';
+            dmgFloat.textContent = '💜' + dmgFloat.textContent;
+            // 添加连锁闪电
+            createChainLightning(x, y);
+            break;
+        case 'poison':
+            dmgFloat.style.color = '#00ff00';
+            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.textShadow = '0 0 10px #00ff00';
+            dmgFloat.textContent = '☠️' + dmgFloat.textContent;
+            break;
+        default:
+            dmgFloat.style.color = '#ffffff';
+            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.textShadow = '0 0 5px rgba(255,255,255,0.5)';
     }
     
     document.body.appendChild(dmgFloat);
     setTimeout(() => dmgFloat.remove(), 1000);
+}
+
+// ⚡闪电特效
+function createLightningEffect(x, y) {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:' + (x - 50) + 'px;top:' + (y - 100) + 'px;width:100px;height:100px;pointer-events:none;z-index:9999;';
+    
+    for(let i = 0; i < 3; i++) {
+        const bolt = document.createElement('div');
+        const angle = (Math.random() - 0.5) * 60;
+        const length = 30 + Math.random() * 40;
+        bolt.style.cssText = 'position:absolute;left:50%;top:50%;width:4px;height:' + length + 'px;background:linear-gradient(to bottom,#fff,#ffff00,#ff6600);transform-origin:top center;transform:rotate(' + angle + 'deg);animation:lightningFlash 0.3s ease-out;';
+        container.appendChild(bolt);
+    }
+    
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 500);
+}
+
+// 🔥火焰粒子特效
+function createFireParticles(x, y) {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:' + (x - 30) + 'px;top:' + (y - 50) + 'px;width:60px;height:80px;pointer-events:none;z-index:9999;';
+    
+    for(let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        const size = 5 + Math.random() * 10;
+        const offsetX = (Math.random() - 0.5) * 40;
+        particle.style.cssText = 'position:absolute;left:' + (30 + offsetX) + 'px;bottom:0;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:radial-gradient(circle,#fff,#ff6600,#ff0000);animation:fireRise ' + (0.5 + Math.random() * 0.5) + 's ease-out forwards;opacity:0;';
+        particle.style.animationDelay = (Math.random() * 0.2) + 's';
+        container.appendChild(particle);
+    }
+    
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 1500);
+}
+
+// ❄️冰晶特效
+function createIceEffect(x, y) {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:' + (x - 50) + 'px;top:' + (y - 50) + 'px;width:100px;height:100px;pointer-events:none;z-index:9999;';
+    
+    // 六边形冰晶
+    for(let i = 0; i < 6; i++) {
+        const crystal = document.createElement('div');
+        const angle = i * 60;
+        const size = 15 + Math.random() * 15;
+        crystal.style.cssText = 'position:absolute;left:50%;top:50%;width:0;height:0;border-left:' + (size/2) + 'px solid transparent;border-right:' + (size/2) + 'px solid transparent;border-bottom:' + size + 'px solid rgba(0,255,255,0.7);transform-origin:center center;transform:rotate(' + angle + 'deg) translateY(-' + (30 + Math.random() * 20) + 'px);animation:iceGrow 0.5s ease-out forwards;';
+        container.appendChild(crystal);
+    }
+    
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 1000);
+}
+
+// 💜连锁闪电特效
+function createChainLightning(x, y) {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:' + (x - 50) + 'px;top:' + (y - 100) + 'px;width:100px;height:120px;pointer-events:none;z-index:9999;';
+    
+    // 创建之字形闪电
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 120;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.strokeStyle = '#aa00ff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#aa00ff';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(50, 0);
+    
+    for(let i = 1; i <= 5; i++) {
+        const nextY = i * 24;
+        const offsetX = (Math.random() - 0.5) * 60;
+        ctx.lineTo(50 + offsetX, nextY);
+    }
+    ctx.stroke();
+    
+    container.appendChild(canvas);
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 500);
 }
 
 // 击杀Boss（额外奖励，因为之前每点伤害已经给金币了）

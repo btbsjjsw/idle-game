@@ -181,12 +181,15 @@ function initGame() {
     setInterval(saveGame, 30000);
 }
 
-// 初始化神器
+// 初始化神器（不要初始化！未解锁的神器应该是undefined）
 function initArtifacts() {
-    if (!gameState.artifacts || Object.keys(gameState.artifacts).length === 0) {
+    // 确保artifacts对象存在，但不初始化任何神器
+    // 未解锁的神器保持undefined状态
+    if (!gameState.artifacts) {
         gameState.artifacts = {};
-        artifactConfig.forEach(a => gameState.artifacts[a.id] = 0);
     }
+    // 注释掉这行！否则所有神器都会被初始化为level 0（已解锁状态）
+    // artifactConfig.forEach(a => gameState.artifacts[a.id] = 0);
 }
 
 // 检查离线收益
@@ -564,10 +567,7 @@ function restartGame() {
     location.reload();
 }
 
-// 更新Boss（随机图片，尽量不重复）
-let lastBossImageIndex = -1;
-let lastSecondLastImageIndex = -1;
-
+// 更新Boss（每个Boss都有不同的图片）
 function updateBoss() {
     gameState.maxHP = Math.floor(100 * Math.pow(1.8, gameState.level - 1));
     gameState.currentHP = gameState.maxHP;
@@ -582,31 +582,15 @@ function updateBoss() {
     document.getElementById('bossName').textContent = bossNames[(gameState.level - 1) % bossNames.length];
     document.getElementById('bossLevel').textContent = gameState.level;
     
-    // 随机选择图片，尽量避免重复
-    let availableIndices = [];
-    for (let i = 0; i < bossImages.length; i++) {
-        if (i !== lastBossImageIndex && i !== lastSecondLastImageIndex) {
-            availableIndices.push(i);
-        }
-    }
-    
-    // 如果所有图片都被排除了（只有2张图的情况），允许重复
-    if (availableIndices.length === 0) {
-        availableIndices = Array.from({length: bossImages.length}, (_, i) => i);
-    }
-    
-    // 随机选择
-    const newIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-    
-    // 更新历史记录
-    lastSecondLastImageIndex = lastBossImageIndex;
-    lastBossImageIndex = newIndex;
+    // 每个关卡使用不同的图片（循环使用10个图片）
+    const imageIndex = (gameState.level - 1) % bossImages.length;
     
     // 更新Boss图片
     const img = document.getElementById('bossImg');
     if (img) {
-        img.src = bossImages[newIndex];
+        img.src = bossImages[imageIndex];
         img.alt = bossNames[(gameState.level - 1) % bossNames.length];
+        img.style.display = 'block';
     }
     
     updateHPBar();

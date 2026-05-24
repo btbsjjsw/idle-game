@@ -236,6 +236,8 @@ function initGame() {
     renderArtifacts();
     renderInventory();
     renderPets();
+    updateUpgradeCosts();
+    updateStatsPanel();
     startAutoAttack();
     startBossAttack();
     startPoisonTick();
@@ -1543,6 +1545,7 @@ function closeInventoryModal() {
 
 function renderInventory() {
     const grid = document.getElementById('inventoryGrid');
+    if (!grid) return;
     grid.innerHTML = '';
     
     const qualityColors = {
@@ -1555,26 +1558,28 @@ function renderInventory() {
     
     gameState.inventory.forEach((item, index) => {
         const div = document.createElement('div');
-        div.className = 'inventory-item';
+        div.className = 'inv-item';
         div.style.borderColor = qualityColors[item.quality];
+        div.style.borderWidth = '1px';
+        div.style.borderStyle = 'solid';
         div.onclick = () => showItemDetail(item, index);
         
         let statsText = '';
-        if (item.stats.attack) statsText += `攻击 +${item.stats.attack} `;
-        if (item.stats.defense) statsText += `防御 +${item.stats.defense} `;
-        if (item.stats.maxHp) statsText += `生命 +${item.stats.maxHp} `;
-        if (item.stats.crit) statsText += `暴击 +${item.stats.crit}% `;
-        if (item.stats.critDamage) statsText += `暴伤 +${item.stats.critDamage}% `;
+        if (item.stats.attack) statsText += `⚔️+${item.stats.attack} `;
+        if (item.stats.defense) statsText += `🛡️+${item.stats.defense} `;
+        if (item.stats.maxHp) statsText += `❤️+${item.stats.maxHp} `;
+        if (item.stats.crit) statsText += `💥+${(item.stats.crit*100).toFixed(0)}% `;
+        if (item.stats.critDamage) statsText += `🔥+${(item.stats.critDamage*100).toFixed(0)}% `;
         
         let mythicBadge = '';
         if (item.quality === 'mythic' && item.abilities && item.abilities.length > 0) {
-            mythicBadge = `<div style="color: #ffcc00; font-size: 0.75em; margin-top: 2px;">🌟x${item.abilities.length}能力</div>`;
+            mythicBadge = `<div style="color: #ffcc00; font-size: 0.72em; margin-top: 3px;">🌟×${item.abilities.length}</div>`;
         }
         
         div.innerHTML = `
-            <div class="item-icon">${item.icon}</div>
-            <div class="item-name" style="color: ${qualityColors[item.quality]}">${item.name}</div>
-            <div class="item-stats">${statsText}</div>
+            <div class="inv-item-icon">${item.icon || '📦'}</div>
+            <div class="inv-item-name" style="color: ${qualityColors[item.quality]}; font-size: 0.78em;">${item.name}</div>
+            <div style="font-size: 0.68em; color: #555; margin-top: 2px;">${statsText}</div>
             ${mythicBadge}
         `;
         grid.appendChild(div);
@@ -1582,30 +1587,33 @@ function renderInventory() {
     
     // 更新背包数量
     const countEl = document.getElementById('inventoryCount');
-    if (countEl) {
-        countEl.textContent = `(${gameState.inventory.length})`;
-    }
+    if (countEl) countEl.textContent = gameState.inventory.length;
     
-    // 更新装备栏显示 - 点击可查看详情
-    Object.keys(gameState.equipment).forEach(slot => {
-        const equipDiv = document.getElementById(`equip-${slot}`);
+    // 更新装备槽位显示
+    renderEquipSlotsGrid();
+}
+
+// 渲染装备槽位网格
+function renderEquipSlotsGrid() {
+    const slots = ['weapon', 'helmet', 'armor', 'ring', 'necklace', 'boots'];
+    const slotNames = { weapon: '⚔️武器', helmet: '🪖头盔', armor: '🛡️护甲', ring: '💍戒指', necklace: '📿项链', boots: '👢鞋子' };
+    const qualityColors = { common: '#aaa', rare: '#0070ff', epic: '#a335ee', legendary: '#ff8000', mythic: '#ff0000' };
+    
+    const container = document.getElementById('equipSlotsGrid');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    slots.forEach(slot => {
         const item = gameState.equipment[slot];
-        if (equipDiv) {
-            if (item) {
-                equipDiv.className = `equipped-item show quality-${item.quality}`;
-                equipDiv.style.backgroundColor = qualityColors[item.quality];
-                equipDiv.style.cursor = 'pointer';
-                // 点击查看装备详情
-                equipDiv.onclick = (e) => {
-                    e.stopPropagation();
-                    showEquippedItemDetail(item, slot);
-                };
-            } else {
-                equipDiv.className = 'equipped-item';
-                equipDiv.style.cursor = 'default';
-                equipDiv.onclick = null;
-            }
-        }
+        const div = document.createElement('div');
+        div.className = 'equip-slot' + (item ? ' filled' : '');
+        div.style.borderColor = item ? qualityColors[item.quality] : '';
+        div.onclick = () => item && showEquippedItemDetail(item, slot);
+        div.innerHTML = `
+            <div class="slot-icon">${item ? (item.icon || '📦') : slotNames[slot].charAt(0)}</div>
+            <div class="slot-label" style="font-size:0.65em;color:${item ? qualityColors[item.quality] : 'var(--text-dim)'};">${item ? item.name : slotNames[slot]}</div>
+        `;
+        container.appendChild(div);
     });
 }
 
@@ -2073,6 +2081,9 @@ function updateDisplay() {
     document.getElementById('currentLevel').textContent = gameState.level;
     document.getElementById('clickDamage').textContent = formatNumber(calculateAttack());
     document.getElementById('dps').textContent = formatNumber(calculateDPS());
+    // 快捷数据条的金币显示
+    const gd = document.getElementById('goldDisplay');
+    if (gd) gd.textContent = formatNumber(gameState.gold);
     document.getElementById('playerLevel').textContent = gameState.clickLevel;
     document.getElementById('clickCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.clickLevel, 1.5)));
     document.getElementById('dpsCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5)));
@@ -2083,7 +2094,7 @@ function updateDisplay() {
     document.querySelectorAll('.upgrade-btn')[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
     document.querySelectorAll('.upgrade-btn')[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
     
-    // 更新详细数据面板
+    // 更新详细数据面板（实时刷新）
     updateStatsPanel();
 }
 
@@ -2223,6 +2234,21 @@ function updateStatsPanel() {
     document.getElementById('statCritDmg').textContent = '×' + critDmgMult.toFixed(2);
     document.getElementById('statDodge').textContent = (dodgeLv * 10) + '%';
     document.getElementById('statRegen').textContent = (regenLv * 5) + '/s';
+    
+    // 累计统计
+    const std = document.getElementById('statTotalDmg');
+    if (std) std.textContent = formatNumber(gameState.totalDamage || 0);
+    const stk = document.getElementById('statTotalKills');
+    if (stk) stk.textContent = formatNumber(gameState.totalBossKills || 0);
+    
+    // 神器商店信息（可能不存在于右侧面板时调用）
+    const shopInfo = document.getElementById('artifactShopInfo');
+    if (shopInfo) {
+        const unlocked = artifactConfig.filter(a => gameState.artifacts[a.id] !== undefined).length;
+        shopInfo.textContent = `已解锁: ${unlocked}/${artifactConfig.length} | 价格: ${formatNumber(getNextUnlockPrice())} 💰`;
+    }
+    const shopBtn = document.getElementById('artifactShopBtn');
+    if (shopBtn) shopBtn.disabled = gameState.gold < getNextUnlockPrice() || unlocked >= artifactConfig.length;
 }
 
 // 渲染分解列表（带百分比）
@@ -2235,7 +2261,8 @@ function renderBreakdownList(containerId, items, total) {
         const pct = total > 0 ? Math.min(100, (item.value / total * 100)) : 0;
         const row = document.createElement('div');
         const isZero = Math.abs(item.value) < 0.01;
-        row.className = 'stat-breakdown-row' + (isZero ? ' is-zero' : '');
+        row.className = 'sbrow' + (isZero ? '' : '');
+        row.style.opacity = isZero ? '0.25' : '1';
         
         let valueStr = '';
         if (item.mult === 1) {
@@ -2246,9 +2273,9 @@ function renderBreakdownList(containerId, items, total) {
         if (item.note) valueStr += ' ' + item.note;
         
         row.innerHTML = `
-            <span class="source-name">${item.name}</span>
-            <span class="source-value">${valueStr}</span>
-            <span class="source-pct">${pct.toFixed(1)}%</span>
+            <span class="sbrow-name">${item.name}</span>
+            <span class="sbrow-value">${valueStr}</span>
+            <span class="sbrow-pct">${pct.toFixed(0)}%</span>
         `;
         container.appendChild(row);
     });

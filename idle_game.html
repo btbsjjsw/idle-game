@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>放置挖矿游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⛏️ 放置挖矿游戏</h1>
+            <p class="subtitle">点击挖矿，雇佣矿工，自动致富！</p>
+        </header>
+
+        <div class="game-area">
+            <div class="resources">
+                <div class="resource-item">
+                    <span class="resource-icon">💰</span>
+                    <span class="resource-label">金币</span>
+                    <span class="resource-value" id="gold">0</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-icon">⛏️</span>
+                    <span class="resource-label">矿工</span>
+                    <span class="resource-value" id="miners">0</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-icon">⚡</span>
+                    <span class="resource-label">每秒产出</span>
+                    <span class="resource-value" id="gps">0</span>
+                </div>
+            </div>
+
+            <div class="click-area">
+                <button class="mine-btn" id="mineBtn" onclick="mine()">
+                    <span class="btn-icon">⛏️</span>
+                    <span class="btn-text">点击挖矿</span>
+                    <span class="btn-hint">每次 +<span id="clickPower">1</span> 金币</span>
+                </button>
+            </div>
+
+            <div class="upgrades">
+                <h2>🏪 升级商店</h2>
+                <div class="upgrade-grid">
+                    <div class="upgrade-item" id="upgrade-miner">
+                        <h3>雇佣矿工</h3>
+                        <p class="description">自动挖矿，每秒产出 1 金币</p>
+                        <div class="cost">费用: <span id="minerCost">10</span> 💰</div>
+                        <button onclick="buyMiner()" class="buy-btn">雇佣</button>
+                    </div>
+
+                    <div class="upgrade-item" id="upgrade-pickaxe">
+                        <h3>升级镐子</h3>
+                        <p class="description">提升点击威力</p>
+                        <div class="cost">费用: <span id="pickaxeCost">50</span> 💰</div>
+                        <button onclick="upgradePickaxe()" class="buy-btn">升级</button>
+                    </div>
+
+                    <div class="upgrade-item" id="upgrade-miner-power">
+                        <h3>强化矿工</h3>
+                        <p class="description">矿工效率 x2</p>
+                        <div class="cost">费用: <span id="minerPowerCost">100</span> 💰</div>
+                        <button onclick="upgradeMinerPower()" class="buy-btn">强化</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <h2>📊 统计信息</h2>
+            <p>总点击次数: <span id="totalClicks">0</span></p>
+            <p>总挖矿量: <span id="totalMined">0</span> 💰</p>
+            <p>游戏时间: <span id="playTime">0</span> 秒</p>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

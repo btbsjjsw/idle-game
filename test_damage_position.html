@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试伤害数字位置</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #testBoss { 
+            position: absolute; 
+            top: 200px; 
+            left: 300px; 
+            width: 200px; 
+            height: 200px; 
+            background: red; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 20px;
+        }
+        .damage-float {
+            position: fixed;
+            color: yellow;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1000;
+            animation: floatUp 1s forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+    </style>
+</head>
+<body>
+    <h1>测试伤害数字位置</h1>
+    <p>点击红色Boss区域，查看伤害数字是否出现在Boss中心</p>
+    <div id="testBoss">Boss (300,200)</div>
+    
+    <script>
+        function showDamageNumber(damage, x, y) {
+            const dmgFloat = document.createElement('div');
+            dmgFloat.className = 'damage-float';
+            dmgFloat.textContent = damage;
+            
+            // 随机偏移防止数字重叠
+            const offsetX = (Math.random() - 0.5) * 60;
+            const offsetY = (Math.random() - 0.5) * 40;
+            
+            console.log('showDamageNumber called with x=' + x + ', y=' + y);
+            
+            // 修复：使用 null 检查而不是 falsy 检查
+            const finalX = (x !== null && x !== undefined) ? x : window.innerWidth / 2;
+            const finalY = (y !== null && y !== undefined) ? y : window.innerHeight / 3;
+            
+            dmgFloat.style.left = (finalX + offsetX) + 'px';
+            dmgFloat.style.top = (finalY + offsetY) + 'px';
+            
+            document.body.appendChild(dmgFloat);
+            setTimeout(() => dmgFloat.remove(), 1000);
+        }
+        
+        document.getElementById('testBoss').addEventListener('click', function(event) {
+            const bossImage = document.getElementById('testBoss');
+            const bossRect = bossImage.getBoundingClientRect();
+            const centerX = bossRect.left + bossRect.width / 2;
+            const centerY = bossRect.top + bossRect.height / 2;
+            
+            console.log('Boss rect:', bossRect);
+            console.log('Center X:', centerX, 'Center Y:', centerY);
+            
+            showDamageNumber(1000, centerX, centerY);
+        });
+    </script>
+</body>
+</html>

@@ -561,8 +561,13 @@ function showDamageNumber(damage, x, y, effectType) {
     // 随机偏移防止数字重叠
     const offsetX = (Math.random() - 0.5) * 60;
     const offsetY = (Math.random() - 0.5) * 40;
-    dmgFloat.style.left = ((x || window.innerWidth / 2) + offsetX) + 'px';
-    dmgFloat.style.top = ((y || window.innerHeight / 3) + offsetY) + 'px';
+    
+    // 修复：使用 null 检查而不是 falsy 检查（x=0 或 y=0 是有效坐标）
+    const finalX = (x !== null && x !== undefined) ? x : window.innerWidth / 2;
+    const finalY = (y !== null && y !== undefined) ? y : window.innerHeight / 3;
+    
+    dmgFloat.style.left = (finalX + offsetX) + 'px';
+    dmgFloat.style.top = (finalY + offsetY) + 'px';
     
     // 伤害越大字体越大（1.2em ~ 4em）
     const logDmg = Math.log10(Math.max(1, damage));
@@ -1239,9 +1244,10 @@ function startAutoAttack() {
         
         // === 记录实时DPS + 显示伤害数字 ===
         dpsTracker.addDamage(totalDamage);
-        const bossArea = document.getElementById('bossClickArea');
-        if (bossArea) {
-            const rect = bossArea.getBoundingClientRect();
+        // 使用boss图片中心位置，而不是点击区域
+        const bossImage = document.getElementById('bossImage');
+        if (bossImage) {
+            const rect = bossImage.getBoundingClientRect();
             const bx = rect.left + rect.width / 2;
             const by = rect.top + rect.height / 2;
             if (isCrit) {

@@ -2044,16 +2044,30 @@ function updateDisplay() {
 
 // 更新详细数据面板
 function updateStatsPanel() {
+    // 检查面板是否存在
+    if (!document.getElementById('statClickBase')) return;
+    
     const baseClick = gameState.clickDamage;
     const baseDps = gameState.dps;
+    
+    // 神器等级（默认为0）
+    const powerBookLv = gameState.artifacts.powerBook || 0;
+    const sharpnessLv = gameState.artifacts.sharpness || 0;
+    const critEyeLv = gameState.artifacts.critEye || 0;
+    const fatalBlowLv = gameState.artifacts.fatalBlow || 0;
+    const goldMagnetLv = gameState.artifacts.goldMagnet || 0;
+    const treasureMapLv = gameState.artifacts.treasureMap || 0;
+    const doubleGoldLv = gameState.artifacts.doubleGold || 0;
+    const dodgeLv = gameState.artifacts.dodge || 0;
+    const regenLv = gameState.artifacts.regen || 0;
     
     // 神器加成计算
     let artifactClickMult = 1;
     let artifactDpsMult = 1;
-    if (gameState.artifacts.powerBook > 0) artifactClickMult *= Math.pow(1.5, gameState.artifacts.powerBook);
-    if (gameState.artifacts.powerBook > 0) artifactDpsMult *= Math.pow(1.5, gameState.artifacts.powerBook);
-    if (gameState.artifacts.sharpness > 0) artifactClickMult *= Math.pow(1.25, gameState.artifacts.sharpness);
-    if (gameState.artifacts.sharpness > 0) artifactDpsMult *= Math.pow(1.25, gameState.artifacts.sharpness);
+    if (powerBookLv > 0) artifactClickMult *= Math.pow(1.5, powerBookLv);
+    if (powerBookLv > 0) artifactDpsMult *= Math.pow(1.5, powerBookLv);
+    if (sharpnessLv > 0) artifactClickMult *= Math.pow(1.25, sharpnessLv);
+    if (sharpnessLv > 0) artifactDpsMult *= Math.pow(1.25, sharpnessLv);
     
     // 宠物加成计算
     let petClickBonus = 0;
@@ -2096,15 +2110,18 @@ function updateStatsPanel() {
     
     // 暴击率
     document.getElementById('statCritRate').textContent = calculateCrit().toFixed(1) + '%';
-    document.getElementById('statCritDmg').textContent = '×' + (5 + (gameState.artifacts.critEye > 0 ? (gameState.artifacts.critEye - 1) * 2 : 0) * (gameState.artifacts.fatalBlow > 0 ? Math.pow(1.5, gameState.artifacts.fatalBlow) : 1)).toFixed(2);
+    let critDmgMult = 5 + (critEyeLv > 0 ? (critEyeLv - 1) * 2 : 0);
+    if (fatalBlowLv > 0) critDmgMult *= Math.pow(1.5, fatalBlowLv);
+    document.getElementById('statCritDmg').textContent = '×' + critDmgMult.toFixed(2);
     
     // 金币统计
     const dps = calculateDPS();
     document.getElementById('statGoldPerSec').textContent = formatNumber(dps);
     
-    let goldMagnetMult = gameState.artifacts.goldMagnet > 0 ? Math.pow(1.5, gameState.artifacts.goldMagnet) : 1;
-    let treasureMapMult = gameState.artifacts.treasureMap > 0 ? Math.pow(1.5, gameState.artifacts.treasureMap) : 1;
-    let doubleGoldMult = gameState.artifacts.doubleGold > 0 ? Math.pow(2, gameState.artifacts.doubleGold) : 1;
+    // 金币加成神器（线性叠加：等级×基础值）
+    let goldMagnetMult = goldMagnetLv > 0 ? 1 + goldMagnetLv * 0.5 : 1;  // 每级+50%
+    let treasureMapMult = treasureMapLv > 0 ? 1 + treasureMapLv * 0.5 : 1;  // 每级+50%
+    let doubleGoldMult = doubleGoldLv > 0 ? 1 + doubleGoldLv * 1 : 1;  // 每级+100%（金币乘2）
     
     document.getElementById('statGoldMagnet').textContent = '×' + goldMagnetMult.toFixed(2);
     document.getElementById('statTreasureMap').textContent = '×' + treasureMapMult.toFixed(2);
@@ -2113,8 +2130,8 @@ function updateStatsPanel() {
     document.getElementById('statGoldMultiplier').textContent = '×' + (goldMagnetMult * treasureMapMult * doubleGoldMult * petGoldMult).toFixed(2);
     
     // 其他属性
-    document.getElementById('statDodge').textContent = (gameState.artifacts.dodge > 0 ? gameState.artifacts.dodge * 10 : 0) + '%';
-    document.getElementById('statRegen').textContent = (gameState.artifacts.regen > 0 ? gameState.artifacts.regen * 5 : 0) + '/s';
+    document.getElementById('statDodge').textContent = (dodgeLv * 10) + '%';
+    document.getElementById('statRegen').textContent = (regenLv * 5) + '/s';
 }
 
 // 格式化数字

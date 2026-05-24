@@ -9,8 +9,8 @@ let gameState = {
     dpsLevel: 0,
     currentHP: 100,
     maxHP: 100,
-    playerMaxHp: 100,
-    playerCurrentHp: 100,
+    playerMaxHp: 500,  // 基础血量500
+    playerCurrentHp: 500,
     petPoints: 0,
     artifacts: {},
     equipment: {
@@ -481,14 +481,15 @@ function startBossAttack() {
 
 // 更新玩家HP显示
 function updatePlayerHP() {
-    // 计算最大生命值
-    let maxHp = 100;
+    // 计算最大生命值（基础500，每级成长10）
+    let maxHp = 500 + (gameState.clickLevel - 1) * 10;
     Object.values(gameState.equipment).forEach(item => {
         if (item && item.stats.maxHp) maxHp += item.stats.maxHp;
     });
     if (gameState.artifacts.guardian > 0) maxHp *= Math.pow(1.5, gameState.artifacts.guardian);
     
     gameState.playerMaxHp = maxHp;
+    // 复活后恢复满血
     if (gameState.playerCurrentHp > maxHp) gameState.playerCurrentHp = maxHp;
     if (gameState.playerCurrentHp < 0) gameState.playerCurrentHp = 0;
     
@@ -509,13 +510,13 @@ function gameOver() {
 function revive() {
     if (gameState.gold >= 100) {
         gameState.gold -= 100;
-        gameState.playerCurrentHp = Math.floor(gameState.playerMaxHp * 0.5);
+        gameState.playerCurrentHp = gameState.playerMaxHp; // 满血复活
         gameState.level = Math.max(1, Math.floor(gameState.level * 0.5));
         updateBoss();
         updatePlayerHP();
         updateDisplay();
         document.getElementById('gameOverModal').classList.remove('active');
-        showNotification('复活成功! 等级降低50%');
+        showNotification('复活成功! 等级降低50%，血量恢复满!');
     } else {
         showNotification('金币不足! 需要100金币复活');
     }
@@ -1063,12 +1064,16 @@ function rebirth() {
     
     gameState.petPoints += petReward;
     
+    // 保存所有永久数据（神器、宠物、装备、背包）
     const savedArtifacts = {...gameState.artifacts};
     const savedPets = {...gameState.pets};
     const savedPetPoints = gameState.petPoints;
     const savedEquipment = {...gameState.equipment};
     const savedInventory = [...gameState.inventory];
     const savedActivePet = gameState.activePet;
+    
+    // 计算新的基础HP（500 + 点击等级加成）
+    const newBaseHp = 500;
     
     gameState = {
         gold: 0,
@@ -1080,19 +1085,20 @@ function rebirth() {
         dpsLevel: 0,
         currentHP: 100,
         maxHP: 100,
-        playerMaxHp: 100,
-        playerCurrentHp: 100,
-        artifacts: savedArtifacts,
-        equipment: savedEquipment,
-        inventory: savedInventory,
-        pets: savedPets,
+        playerMaxHp: newBaseHp,
+        playerCurrentHp: newBaseHp, // 重生后满血
+        artifacts: savedArtifacts,  // 神器永久保存！
+        equipment: savedEquipment,  // 装备永久保存！
+        inventory: savedInventory,  // 背包永久保存！
+        pets: savedPets,           // 宠物永久保存！
         petPoints: savedPetPoints,
-        activePet: savedActivePet,
+        activePet: savedActivePet, // 出战宠物保留
         totalDamage: 0,
         startTime: Date.now(),
         lastSaveTime: Date.now()
     };
     
+    // 富豪勋章加成
     if (gameState.artifacts.wealthMedal > 0) {
         gameState.gold = Math.floor(200 * gameState.artifacts.wealthMedal);
     }
@@ -1104,7 +1110,7 @@ function rebirth() {
     renderArtifacts();
     renderInventory();
     renderPets();
-    showNotification(`重生成功! 获得 ${petReward} 宠物点! (神器用金币购买)`);
+    showNotification(`重生成功! 神器/装备永久保留! 获得 ${petReward} 宠物点!`);
     saveGame();
 }
 

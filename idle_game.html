@@ -123,59 +123,54 @@
         <div class="stats-panel">
             <h2>📊 详细数据</h2>
             
-            <!-- 💢 DPS来源详情 -->
-            <div class="stats-section">
-                <div class="stats-section-title">💢 DPS 每秒伤害</div>
-                <div class="stats-total-row">
-                    <span>总DPS</span>
-                    <span class="stats-value" id="statDpsTotal">0</span>
-                </div>
-                <div class="stats-dps-list" id="dpsBreakdown"></div>
+            <!-- 💢 DPS -->
+            <div class="stat-block">
+                <div class="stat-block-header">💢 DPS</div>
+                <div class="stat-main-value" id="statDpsTotal">0</div>
+                <div class="stat-breakdown" id="dpsBreakdown"></div>
             </div>
             
-            <!-- 💰 金币来源详情 -->
-            <div class="stats-section">
-                <div class="stats-section-title">💰 金币 每秒收益</div>
-                <div class="stats-total-row">
-                    <span>总金币/秒</span>
-                    <span class="stats-value" id="statGoldPerSec">0</span>
-                </div>
-                <div class="stats-dps-list" id="goldBreakdown"></div>
+            <!-- 💰 金币/秒 -->
+            <div class="stat-block">
+                <div class="stat-block-header">💰 金币/秒</div>
+                <div class="stat-main-value gold" id="statGoldPerSec">0</div>
+                <div class="stat-breakdown" id="goldBreakdown"></div>
             </div>
             
-            <!-- ⚔️ 点击伤害来源 -->
-            <div class="stats-section">
-                <div class="stats-section-title">⚔️ 点击伤害</div>
-                <div class="stats-total-row">
-                    <span>总点击伤害</span>
-                    <span class="stats-value" id="statClickTotal">1</span>
-                </div>
-                <div class="stats-dps-list" id="clickBreakdown"></div>
+            <!-- ⚔️ 点击伤害 -->
+            <div class="stat-block">
+                <div class="stat-block-header">⚔️ 点击伤害</div>
+                <div class="stat-main-value" id="statClickTotal">1</div>
+                <div class="stat-breakdown" id="clickBreakdown"></div>
             </div>
             
             <!-- 💥 暴击 -->
-            <div class="stats-section">
-                <div class="stats-section-title">💥 暴击</div>
-                <div class="stats-row">
-                    <span class="stats-label">暴击率</span>
-                    <span class="stats-value" id="statCritRate">0%</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">暴击伤害</span>
-                    <span class="stats-value" id="statCritDmg">×5.00</span>
+            <div class="stat-block">
+                <div class="stat-block-header">💥 暴击</div>
+                <div class="stat-two-col">
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">暴击率</span>
+                        <span class="stat-mini-value" id="statCritRate">0%</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">暴击伤害</span>
+                        <span class="stat-mini-value" id="statCritDmg">×5.00</span>
+                    </div>
                 </div>
             </div>
             
-            <!-- ✨ 其他属性 -->
-            <div class="stats-section">
-                <div class="stats-section-title">✨ 其他属性</div>
-                <div class="stats-row">
-                    <span class="stats-label">闪避率</span>
-                    <span class="stats-value" id="statDodge">0%</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">生命回复</span>
-                    <span class="stats-value" id="statRegen">0/s</span>
+            <!-- ✨ 其他 -->
+            <div class="stat-block">
+                <div class="stat-block-header">✨ 其他</div>
+                <div class="stat-two-col">
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">闪避率</span>
+                        <span class="stat-mini-value" id="statDodge">0%</span>
+                    </div>
+                    <div class="stat-mini-item">
+                        <span class="stat-mini-label">生命回复</span>
+                        <span class="stat-mini-value" id="statRegen">0/s</span>
+                    </div>
                 </div>
             </div>
         </div>

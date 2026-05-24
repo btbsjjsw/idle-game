@@ -1,4 +1,4 @@
-// 全局定时器（防止重生/重置后重复创建）
+﻿// 全局定时器（防止重生/重置后重复创建）
 const _timers = {};
 function safeInterval(key, fn, ms) {
     if (_timers[key]) clearInterval(_timers[key]);
@@ -471,7 +471,11 @@ function attackBoss(event) {
     for (let i = 0; i < hits; i++) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
-        if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, effectType);
+        if (i === 0) {
+            const bossImage = document.getElementById('bossImage');
+            const bossRect = bossImage.getBoundingClientRect();
+            showDamageNumber(totalDamageDealt, bossRect.left + bossRect.width/2, bossRect.top + bossRect.height/2, effectType);
+        }
     }
     
     // 记录实时DPS
@@ -523,10 +527,28 @@ function showLifestealNumber(amount, x, y) {
     const float = document.createElement('div');
     float.className = 'damage-float';
     float.textContent = '+' + formatNumber(amount) + ' ❤️';
-    float.style.left = (x || window.innerWidth / 2) + 'px';
-    float.style.top = (y || window.innerHeight / 3 - 30) + 'px';
-    float.style.color = '#ff6b6b';
-    float.style.fontSize = '1.2em';
+    
+    // 显示在玩家区域
+    const playerHpWrap = document.querySelector('.player-hp-wrap');
+    if (playerHpWrap) {
+        const rect = playerHpWrap.getBoundingClientRect();
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 40 - 30;
+        float.style.left = (rect.left + rect.width/2 + offsetX) + 'px';
+        float.style.top = (rect.top + offsetY) + 'px';
+    } else {
+        float.style.left = (x || window.innerWidth / 2) + 'px';
+        float.style.top = (y || window.innerHeight / 3 - 30) + 'px';
+    }
+    
+    float.style.color = '#00ff88';
+    
+    // 伤害越大字体越大
+    const logAmt = Math.log10(Math.max(1, amount));
+    const scaleFont = Math.min(3.5, Math.max(1.2, 1.2 + logAmt * 0.3));
+    float.style.fontSize = scaleFont + 'em';
+    
+    float.style.textShadow = '0 0 10px #00ff88';
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 1000);
 }
@@ -2455,3 +2477,6 @@ document.addEventListener('keydown', (e) => {
 
 // 初始化
 window.onload = initGame;
+
+
+

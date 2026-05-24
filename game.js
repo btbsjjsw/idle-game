@@ -2042,15 +2042,10 @@ function updateDisplay() {
     updateStatsPanel();
 }
 
-// 更新详细数据面板
+// 更新详细数据面板（带来源分解和百分比）
 function updateStatsPanel() {
-    // 检查面板是否存在
-    if (!document.getElementById('statClickBase')) return;
+    if (!document.getElementById('statDpsTotal')) return;
     
-    const baseClick = gameState.clickDamage;
-    const baseDps = gameState.dps;
-    
-    // 神器等级（默认为0）
     const powerBookLv = gameState.artifacts.powerBook || 0;
     const sharpnessLv = gameState.artifacts.sharpness || 0;
     const critEyeLv = gameState.artifacts.critEye || 0;
@@ -2061,77 +2056,160 @@ function updateStatsPanel() {
     const dodgeLv = gameState.artifacts.dodge || 0;
     const regenLv = gameState.artifacts.regen || 0;
     
-    // 神器加成计算
-    let artifactClickMult = 1;
-    let artifactDpsMult = 1;
-    if (powerBookLv > 0) artifactClickMult *= Math.pow(1.5, powerBookLv);
-    if (powerBookLv > 0) artifactDpsMult *= Math.pow(1.5, powerBookLv);
-    if (sharpnessLv > 0) artifactClickMult *= Math.pow(1.25, sharpnessLv);
-    if (sharpnessLv > 0) artifactDpsMult *= Math.pow(1.25, sharpnessLv);
+    // ========== DPS 分解 ==========
+    const baseDps = gameState.dps;
+    const powerBookMult = powerBookLv > 0 ? Math.pow(1.5, powerBookLv) : 1;
+    const sharpnessMult = sharpnessLv > 0 ? Math.pow(1.25, sharpnessLv) : 1;
+    const totalArtifactMult = powerBookMult * sharpnessMult;
     
-    // 宠物加成计算
-    let petClickBonus = 0;
+    // 基础 * 神器倍率后的值（不含宠装加成）
+    const dpsAfterArtifact = baseDps * totalArtifactMult;
+    
+    // 宠物DPS加成
     let petDpsBonus = 0;
     let petGoldMult = 1;
+    let petName = '';
     if (gameState.activePet) {
         const pet = petConfig.find(p => p.id === gameState.activePet);
         if (pet) {
-            if (pet.bonus.attack) petClickBonus = pet.bonus.attack * (gameState.pets[gameState.activePet] || 1);
             if (pet.bonus.dps) petDpsBonus = pet.bonus.dps * (gameState.pets[gameState.activePet] || 1);
             if (pet.bonus.gold) petGoldMult = 1 + pet.bonus.gold / 100;
+            petName = pet.icon + ' ' + pet.name;
         }
     }
     
-    // 装备加成计算
-    let equipClickBonus = 0;
+    // 装备DPS加成
     let equipDpsBonus = 0;
-    Object.values(gameState.equipment).forEach(item => {
-        if (item && item.stats) {
-            if (item.stats.attack) {
-                equipClickBonus += item.stats.attack;
-                equipDpsBonus += item.stats.attack;
-            }
+    let equipDetails = [];
+    Object.values(gameState.equipment).forEach((item, idx) => {
+        if (item && item.stats && item.stats.attack) {
+            equipDpsBonus += item.stats.attack;
+            equipDetails.push({ name: (item.icon || '⚔️') + ' ' + item.name, value: item.stats.attack });
         }
     });
     
-    // 点击伤害详情
-    document.getElementById('statClickBase').textContent = formatNumber(baseClick);
-    document.getElementById('statClickArtifact').textContent = '×' + artifactClickMult.toFixed(2);
-    document.getElementById('statClickPet').textContent = '+' + formatNumber(petClickBonus);
-    document.getElementById('statClickEquip').textContent = '+' + formatNumber(equipClickBonus);
-    document.getElementById('statClickTotal').textContent = formatNumber(calculateAttack());
+    // 全能戒指
+    const allDamageLv = gameState.artifacts.allDamage || 0;
+    const allDamageBonus = allDamageLv > 0 ? allDamageLv * 0.5 : 0;
     
-    // DPS详情
-    document.getElementById('statDpsBase').textContent = formatNumber(baseDps);
-    document.getElementById('statDpsArtifact').textContent = '×' + artifactDpsMult.toFixed(2);
-    document.getElementById('statDpsPet').textContent = '+' + formatNumber(petDpsBonus);
-    document.getElementById('statDpsEquip').textContent = '+' + formatNumber(equipDpsBonus);
-    document.getElementById('statDpsTotal').textContent = formatNumber(calculateDPS());
+    const totalDps = calculateDPS();
     
-    // 暴击率
+    // 合成DPS分解列表
+    const dpsItems = [];
+    dpsItems.push({ name: '📊 基础DPS', value: baseDps, mult: 1 });
+    if (powerBookLv > 0) dpsItems.push({ name: '📖 力量之书', value: dpsAfterArtifact - baseDps, mult: 1, note: '×' + powerBookMult.toFixed(2) });
+    if (sharpnessLv > 1) dpsItems.push({ name: '🗡️ 锋利之爪', value: (baseDps * powerBookMult * sharpnessMult) - (baseDps * powerBookMult), mult: 1, note: '×' + sharpnessMult.toFixed(2) });
+    if (allDamageLv > 0) dpsItems.push({ name: '🌟 全能戒指', value: totalDps * allDamageBonus, mult: 1, note: '+' + (allDamageLv * 50) + '%' });
+    if (petDpsBonus > 0) dpsItems.push({ name: petName || '🐾 宠物', value: petDpsBonus, mult: 0 });
+    if (equipDpsBonus > 0) {
+        if (equipDetails.length > 0) {
+            equipDetails.forEach(e => dpsItems.push({ name: e.name, value: e.value, mult: 0 }));
+        } else {
+            dpsItems.push({ name: '⚔️ 装备', value: equipDpsBonus, mult: 0 });
+        }
+    }
+    
+    document.getElementById('statDpsTotal').textContent = formatNumber(totalDps);
+    renderBreakdownList('dpsBreakdown', dpsItems, totalDps);
+    
+    // ========== 金币分解 ==========
+    const baseGoldPerSec = totalDps;
+    let goldMagnetBonus = goldMagnetLv > 0 ? goldMagnetLv * 0.5 : 0;
+    let treasureMapBonus = treasureMapLv > 0 ? treasureMapLv * 0.5 : 0;
+    let doubleGoldBonus = doubleGoldLv > 0 ? doubleGoldLv * 1 : 0;
+    
+    const goldMultiplier = (1 + goldMagnetBonus) * (1 + treasureMapBonus) * (1 + doubleGoldBonus) * petGoldMult;
+    const totalGoldPerSec = baseGoldPerSec * goldMultiplier;
+    
+    const goldItems = [];
+    goldItems.push({ name: '💥 DPS转化', value: baseGoldPerSec, mult: 1 });
+    if (goldMagnetLv > 0) goldItems.push({ name: '🧲 金币磁铁', value: baseGoldPerSec * goldMagnetBonus, mult: 1, note: '×' + (1 + goldMagnetBonus).toFixed(2) });
+    if (treasureMapLv > 0) goldItems.push({ name: '🗺️ 宝藏地图', value: baseGoldPerSec * treasureMapBonus, mult: 1, note: '×' + (1 + treasureMapBonus).toFixed(2) });
+    if (doubleGoldLv > 0) goldItems.push({ name: '✨ 黄金双倍', value: baseGoldPerSec * doubleGoldBonus, mult: 1, note: '×' + (1 + doubleGoldBonus).toFixed(2) });
+    if (petGoldMult > 1) goldItems.push({ name: petName || '🐾 宠物金币', value: baseGoldPerSec * (petGoldMult - 1), mult: 1, note: '×' + petGoldMult.toFixed(2) });
+    
+    document.getElementById('statGoldPerSec').textContent = formatNumber(totalGoldPerSec);
+    renderBreakdownList('goldBreakdown', goldItems, totalGoldPerSec);
+    
+    // ========== 点击伤害分解 ==========
+    const baseClick = gameState.clickDamage;
+    const totalClick = calculateAttack();
+    
+    // 计算各来源贡献
+    let petClickBonus = 0;
+    if (gameState.activePet) {
+        const pet = petConfig.find(p => p.id === gameState.activePet);
+        if (pet && pet.bonus.attack) petClickBonus = pet.bonus.attack * (gameState.pets[gameState.activePet] || 1);
+    }
+    
+    let equipClickBonus = 0;
+    let equipClickDetails = [];
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats && item.stats.attack) {
+            equipClickBonus += item.stats.attack;
+            equipClickDetails.push({ name: (item.icon || '⚔️') + ' ' + item.name, value: item.stats.attack });
+        }
+    });
+    
+    // 神器贡献 = 基础 * (multiplier - 1) + allDamage贡献
+    const artifactClickContrib = totalClick - baseClick - petClickBonus - equipClickBonus;
+    
+    const clickItems = [];
+    clickItems.push({ name: '📊 基础点击', value: baseClick, mult: 1 });
+    if (artifactClickContrib > 0.01 || artifactClickContrib < -0.01) {
+        clickItems.push({ name: '📖🗡️🌟 神器加成', value: artifactClickContrib, mult: 1, note: '×' + totalArtifactMult.toFixed(2) });
+    }
+    if (petClickBonus > 0) clickItems.push({ name: petName || '🐾 宠物', value: petClickBonus, mult: 0 });
+    if (equipClickBonus > 0) {
+        if (equipClickDetails.length > 0) {
+            equipClickDetails.forEach(e => clickItems.push({ name: e.name, value: e.value, mult: 0 }));
+        } else {
+            clickItems.push({ name: '⚔️ 装备', value: equipClickBonus, mult: 0 });
+        }
+    }
+    
+    document.getElementById('statClickTotal').textContent = formatNumber(totalClick);
+    renderBreakdownList('clickBreakdown', clickItems, totalClick);
+    
+    // ========== 暴击 & 其他 ==========
     document.getElementById('statCritRate').textContent = calculateCrit().toFixed(1) + '%';
     let critDmgMult = 5 + (critEyeLv > 0 ? (critEyeLv - 1) * 2 : 0);
     if (fatalBlowLv > 0) critDmgMult *= Math.pow(1.5, fatalBlowLv);
     document.getElementById('statCritDmg').textContent = '×' + critDmgMult.toFixed(2);
-    
-    // 金币统计
-    const dps = calculateDPS();
-    document.getElementById('statGoldPerSec').textContent = formatNumber(dps);
-    
-    // 金币加成神器（线性叠加：等级×基础值）
-    let goldMagnetMult = goldMagnetLv > 0 ? 1 + goldMagnetLv * 0.5 : 1;  // 每级+50%
-    let treasureMapMult = treasureMapLv > 0 ? 1 + treasureMapLv * 0.5 : 1;  // 每级+50%
-    let doubleGoldMult = doubleGoldLv > 0 ? 1 + doubleGoldLv * 1 : 1;  // 每级+100%（金币乘2）
-    
-    document.getElementById('statGoldMagnet').textContent = '×' + goldMagnetMult.toFixed(2);
-    document.getElementById('statTreasureMap').textContent = '×' + treasureMapMult.toFixed(2);
-    document.getElementById('statDoubleGold').textContent = '×' + doubleGoldMult.toFixed(2);
-    document.getElementById('statPetGold').textContent = '×' + petGoldMult.toFixed(2);
-    document.getElementById('statGoldMultiplier').textContent = '×' + (goldMagnetMult * treasureMapMult * doubleGoldMult * petGoldMult).toFixed(2);
-    
-    // 其他属性
     document.getElementById('statDodge').textContent = (dodgeLv * 10) + '%';
     document.getElementById('statRegen').textContent = (regenLv * 5) + '/s';
+}
+
+// 渲染分解列表（带百分比）
+function renderBreakdownList(containerId, items, total) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    
+    items.forEach(item => {
+        const pct = total > 0 ? (item.value / total * 100) : 0;
+        const row = document.createElement('div');
+        const isZero = Math.abs(item.value) < 0.01 && item.mult !== 1;
+        row.className = 'stats-breakdown-row' + (isZero ? ' is-zero' : '');
+        
+        let valueStr = '';
+        if (item.mult === 1) {
+            // 加法来源，显示 +value
+            if (item.value >= 0) valueStr = '+' + formatNumber(item.value);
+            else valueStr = formatNumber(item.value);
+        } else {
+            // 乘法来源，显示 ×value
+            valueStr = '×' + item.value.toFixed(2);
+        }
+        if (item.note) valueStr += ' ' + item.note;
+        
+        row.innerHTML = `
+            <span class="source-name">${item.name}</span>
+            <span class="source-value">${valueStr}</span>
+            <span class="source-pct">${pct.toFixed(1)}%</span>
+        `;
+        container.appendChild(row);
+    });
 }
 
 // 格式化数字

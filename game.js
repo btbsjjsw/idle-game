@@ -842,6 +842,52 @@ function revive() {
 }
 
 // 重新开始
+// ===== 重置游戏 =====
+function confirmResetGame() {
+    if (confirm('⚠️ 确定要清除所有进度吗？这将删除所有存档数据，无法恢复！')) {
+        resetAllGameData();
+    }
+}
+
+function resetAllGameData() {
+    // 清除所有存档
+    localStorage.removeItem('bossRPGSave');
+    
+    // 重置所有游戏状态
+    gameState = {
+        gold: 0,
+        level: 1,
+        currentHP: 100,
+        maxHP: 100,
+        clickDamage: 1,
+        clickLevel: 1,
+        dps: 0,
+        dpsLevel: 0,
+        artifactPoints: 0,
+        artifacts: {},
+        equipment: {},
+        inventory: [],
+        pets: [],
+        activePet: null,
+        petPoints: 0,
+        currentRebirth: 0,
+        totalGoldEarned: 0,
+        totalBossKills: 0,
+        lastSaveTime: Date.now(),
+        // 保留重生数据
+        rebirthCount: gameState.rebirthCount || 0,
+        rebirthGoldBonus: gameState.rebirthGoldBonus || 0,
+        rebirthDamageBonus: gameState.rebirthDamageBonus || 0,
+        clickLevel: 1,
+        dpsLevel: 0
+    };
+    
+    // 重新初始化
+    initGame();
+    saveGame();
+    showNotification('🎮 游戏已重置，所有数据已清除！');
+}
+
 function restartGame() {
     localStorage.removeItem('bossRPGSave');
     location.reload();

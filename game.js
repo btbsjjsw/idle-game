@@ -86,67 +86,109 @@ const artifactEffects = {
 };
 
 // 装备配置
+// ===== 神话装备特殊能力列表 =====
+const mythicAbilities = [
+    { id: 'myth_atk1', name: '毁灭打击', icon: '💥', desc: '攻击力 +100%', effect: { damageBoost: 1.0 } },
+    { id: 'myth_atk2', name: '致命一击', icon: '⚔️', desc: '暴击伤害 +200%', effect: { critDamageBonus: 200 } },
+    { id: 'myth_atk3', name: '嗜血狂暴', icon: '🩸', desc: '生命偷取 +30%', effect: { lifestealBonus: 30 } },
+    { id: 'myth_atk4', name: '闪电风暴', icon: '⚡', desc: '攻击时 20% 连锁闪电', effect: { chainLightning: 0.2 } },
+    { id: 'myth_atk5', name: '火焰灼烧', icon: '🔥', desc: '攻击附加 50% 火焰伤害', effect: { fireBonus: 0.5 } },
+    { id: 'myth_atk6', name: '冰霜冻结', icon: '❄️', desc: '攻击时 30% 减速Boss', effect: { slowBoss: 0.3 } },
+    { id: 'myth_atk7', name: '连击精通', icon: '🎯', desc: '攻击次数 +100%', effect: { attackCountBonus: 1.0 } },
+    { id: 'myth_def1', name: '神圣护盾', icon: '🛡️', desc: '受到伤害 -50%', effect: { damageReduceAll: 0.5 } },
+    { id: 'myth_def2', name: '反伤甲胄', icon: '⚡', desc: '反弹受到伤害的 30%', effect: { thornsBonus: 0.3 } },
+    { id: 'myth_def3', name: '闪避大师', icon: '💨', desc: '闪避率 +40%', effect: { dodgeBonus: 40 } },
+    { id: 'myth_def4', name: '生命链接', icon: '❤️', desc: '最大生命 +200%', effect: { maxHpBonus: 2.0 } },
+    { id: 'myth_def5', name: '元素结界', icon: '🔮', desc: '全元素抗性 +80%', effect: { allResistBonus: 80 } },
+    { id: 'myth_gold1', name: '财富之神的祝福', icon: '💰', desc: '金币获取 +200%', effect: { goldBonus: 2.0 } },
+    { id: 'myth_gold2', name: '爆率提升', icon: '📦', desc: '装备掉率 +100%', effect: { dropRateBonus: 1.0 } },
+    { id: 'myth_gold3', name: '幸运光环', icon: '🍀', desc: '全幸运 +50%', effect: { luckBonus: 0.5 } },
+    { id: 'myth_special1', name: '瞬间移动', icon: '🌟', desc: '攻击速度 +100%', effect: { attackSpeedBonus: 1.0 } },
+    { id: 'myth_special2', name: '灵魂收割', icon: '💀', desc: '击杀Boss时 50% 额外金币', effect: { killGoldBonus: 0.5 } },
+    { id: 'myth_special3', name: '不灭意志', icon: '👻', desc: '死亡时 30% 复活', effect: { reviveChance: 0.3 } },
+    { id: 'myth_special4', name: '经验汲取', icon: '📚', desc: '经验获取 +150%', effect: { expBonus: 1.5 } },
+    { id: 'myth_special5', name: '无敌姿态', icon: '🏆', desc: '无敌 3秒 (每30秒)', effect: { invincibleCd: 30000 } },
+    { id: 'myth_special6', name: '暴击回血', icon: '💉', desc: '暴击时 恢复 10% 最大生命', effect: { critHeal: 0.1 } },
+    { id: 'myth_special7', name: '穿透之矛', icon: '🎯', desc: '无视 Boss 50% 防御', effect: { armorPenetration: 0.5 } },
+    { id: 'myth_special8', name: '连锁反应', icon: '🔗', desc: '攻击命中时 30% 再次攻击', effect: { doubleStrike: 0.3 } },
+    { id: 'myth_special9', name: '燃烧意志', icon: '🔥', desc: '生命低于 30% 时 伤害 +200%', effect: { lowHpDamage: 2.0 } },
+    { id: 'myth_special10', name: '护盾结界', icon: '🔰', desc: '每 20秒 获得护盾', effect: { shieldCd: 20000 } }
+];
+
+// ===== 装备配置（强化版） =====
 const equipmentConfig = {
     weapon: [
-        {name: '生锈的剑', icon: '⚔️', quality: 'common', stats: {attack: 5}},
-        {name: '铁剑', icon: '⚔️', quality: 'common', stats: {attack: 10}},
-        {name: '钢剑', icon: '🗡️', quality: 'rare', stats: {attack: 25, crit: 5}},
-        {name: '魔法剑', icon: '🔮', quality: 'rare', stats: {attack: 40, crit: 10}},
-        {name: '火焰剑', icon: '🔥', quality: 'epic', stats: {attack: 80, crit: 15, fireDamage: 20}},
-        {name: '冰霜剑', icon: '❄️', quality: 'epic', stats: {attack: 80, crit: 15, iceDamage: 20}},
-        {name: '雷电剑', icon: '⚡', quality: 'epic', stats: {attack: 80, crit: 15, lightningDamage: 20}},
-        {name: '传说圣剑', icon: '✨', quality: 'legendary', stats: {attack: 200, crit: 30, allDamage: 50}},
-        {name: '暗黑之刃', icon: '💀', quality: 'legendary', stats: {attack: 250, crit: 40, lifesteal: 10}},
-        {name: '神话破坏者', icon: '🌟', quality: 'mythic', stats: {attack: 500, crit: 50, allDamage: 100}}
+        {name: '生锈的剑', icon: '⚔️', quality: 'common', stats: {attack: 50}},
+        {name: '铁剑', icon: '⚔️', quality: 'common', stats: {attack: 100}},
+        {name: '钢剑', icon: '🗡️', quality: 'rare', stats: {attack: 300, crit: 8}},
+        {name: '魔法剑', icon: '🔮', quality: 'rare', stats: {attack: 500, crit: 15}},
+        {name: '火焰剑', icon: '🔥', quality: 'epic', stats: {attack: 1200, crit: 25, fireDamage: 50}},
+        {name: '冰霜剑', icon: '❄️', quality: 'epic', stats: {attack: 1200, crit: 25, iceDamage: 50}},
+        {name: '雷电剑', icon: '⚡', quality: 'epic', stats: {attack: 1200, crit: 25, lightningDamage: 50}},
+        {name: '传说圣剑', icon: '✨', quality: 'legendary', stats: {attack: 3000, crit: 50, allDamage: 200, lifesteal: 15}},
+        {name: '暗黑之刃', icon: '💀', quality: 'legendary', stats: {attack: 4000, crit: 70, lifesteal: 25, critDamage: 150}},
+        {name: '神话破坏者', icon: '🌟', quality: 'mythic', stats: {attack: 10000, crit: 100, allDamage: 500, lifesteal: 40, critDamage: 300}}
     ],
     helmet: [
-        {name: '皮帽', icon: '🎩', quality: 'common', stats: {defense: 3}},
-        {name: '铁盔', icon: '🪖', quality: 'common', stats: {defense: 8}},
-        {name: '钢盔', icon: '🪖', quality: 'rare', stats: {defense: 20, maxHp: 50}},
-        {name: '魔法头盔', icon: '🔮', quality: 'rare', stats: {defense: 35, maxHp: 100}},
-        {name: '火焰头盔', icon: '🔥', quality: 'epic', stats: {defense: 70, maxHp: 200, fireResist: 30}},
-        {name: '冰霜头盔', icon: '❄️', quality: 'epic', stats: {defense: 70, maxHp: 200, iceResist: 30}},
-        {name: '传说头盔', icon: '👑', quality: 'legendary', stats: {defense: 150, maxHp: 500, allResist: 20}},
-        {name: '神话皇冠', icon: '🌟', quality: 'mythic', stats: {defense: 300, maxHp: 1000, allResist: 50}}
+        {name: '皮帽', icon: '🎩', quality: 'common', stats: {defense: 30}},
+        {name: '铁盔', icon: '🪖', quality: 'common', stats: {defense: 80}},
+        {name: '钢盔', icon: '🪖', quality: 'rare', stats: {defense: 200, maxHp: 500}},
+        {name: '魔法头盔', icon: '🔮', quality: 'rare', stats: {defense: 350, maxHp: 1000}},
+        {name: '火焰头盔', icon: '🔥', quality: 'epic', stats: {defense: 700, maxHp: 2000, fireResist: 50}},
+        {name: '冰霜头盔', icon: '❄️', quality: 'epic', stats: {defense: 700, maxHp: 2000, iceResist: 50}},
+        {name: '传说头盔', icon: '👑', quality: 'legendary', stats: {defense: 1500, maxHp: 5000, allResist: 30, regen: 20}},
+        {name: '神话皇冠', icon: '🌟', quality: 'mythic', stats: {defense: 3000, maxHp: 15000, allResist: 80, regen: 50}}
     ],
     armor: [
-        {name: '布衣', icon: '👕', quality: 'common', stats: {defense: 5}},
-        {name: '皮甲', icon: '🥋', quality: 'common', stats: {defense: 12}},
-        {name: '锁甲', icon: '🛡️', quality: 'rare', stats: {defense: 30, maxHp: 80}},
-        {name: '板甲', icon: '🛡️', quality: 'rare', stats: {defense: 50, maxHp: 150}},
-        {name: '魔法护甲', icon: '🔮', quality: 'epic', stats: {defense: 100, maxHp: 300, damageReduce: 10}},
-        {name: '火焰护甲', icon: '🔥', quality: 'epic', stats: {defense: 100, maxHp: 300, fireResist: 50}},
-        {name: '传说护甲', icon: '✨', quality: 'legendary', stats: {defense: 200, maxHp: 800, damageReduce: 25}},
-        {name: '神话护甲', icon: '🌟', quality: 'mythic', stats: {defense: 400, maxHp: 2000, damageReduce: 40}}
+        {name: '布衣', icon: '👕', quality: 'common', stats: {defense: 50}},
+        {name: '皮甲', icon: '🥋', quality: 'common', stats: {defense: 120}},
+        {name: '锁甲', icon: '🛡️', quality: 'rare', stats: {defense: 300, maxHp: 800}},
+        {name: '板甲', icon: '🛡️', quality: 'rare', stats: {defense: 500, maxHp: 1500}},
+        {name: '魔法护甲', icon: '🔮', quality: 'epic', stats: {defense: 1000, maxHp: 3000, damageReduce: 15}},
+        {name: '火焰护甲', icon: '🔥', quality: 'epic', stats: {defense: 1000, maxHp: 3000, fireResist: 80}},
+        {name: '传说护甲', icon: '✨', quality: 'legendary', stats: {defense: 2000, maxHp: 8000, damageReduce: 30, regen: 30}},
+        {name: '神话护甲', icon: '🌟', quality: 'mythic', stats: {defense: 4000, maxHp: 25000, damageReduce: 50, regen: 80}}
     ],
     ring: [
-        {name: '铁戒指', icon: '💍', quality: 'common', stats: {crit: 3}},
-        {name: '银戒指', icon: '💍', quality: 'common', stats: {crit: 8}},
-        {name: '红宝石戒指', icon: '💎', quality: 'rare', stats: {crit: 20, critDamage: 15}},
-        {name: '钻石戒指', icon: '💎', quality: 'rare', stats: {crit: 35, critDamage: 30}},
-        {name: '魔法戒指', icon: '🔮', quality: 'epic', stats: {crit: 50, critDamage: 50, attack: 30}},
-        {name: '传说戒指', icon: '✨', quality: 'legendary', stats: {crit: 80, critDamage: 100, attack: 100}},
-        {name: '神话戒指', icon: '🌟', quality: 'mythic', stats: {crit: 150, critDamage: 200, attack: 200}}
+        {name: '铁戒指', icon: '💍', quality: 'common', stats: {crit: 5}},
+        {name: '银戒指', icon: '💍', quality: 'common', stats: {crit: 12}},
+        {name: '红宝石戒指', icon: '💎', quality: 'rare', stats: {crit: 30, critDamage: 25}},
+        {name: '钻石戒指', icon: '💎', quality: 'rare', stats: {crit: 50, critDamage: 50}},
+        {name: '魔法戒指', icon: '🔮', quality: 'epic', stats: {crit: 80, critDamage: 100, attack: 100}},
+        {name: '传说戒指', icon: '✨', quality: 'legendary', stats: {crit: 150, critDamage: 200, attack: 300}},
+        {name: '神话戒指', icon: '🌟', quality: 'mythic', stats: {crit: 300, critDamage: 500, attack: 800, goldBonus: 0.5}}
     ],
     necklace: [
-        {name: '木项链', icon: '📿', quality: 'common', stats: {maxHp: 20}},
-        {name: '皮项链', icon: '📿', quality: 'common', stats: {maxHp: 50}},
-        {name: '银项链', icon: '📿', quality: 'rare', stats: {maxHp: 150, defense: 10}},
-        {name: '金项链', icon: '📿', quality: 'rare', stats: {maxHp: 300, defense: 25}},
-        {name: '魔法项链', icon: '🔮', quality: 'epic', stats: {maxHp: 500, defense: 50, regen: 5}},
-        {name: '传说项链', icon: '✨', quality: 'legendary', stats: {maxHp: 1000, defense: 100, regen: 15}},
-        {name: '神话项链', icon: '🌟', quality: 'mythic', stats: {maxHp: 3000, defense: 200, regen: 30}}
+        {name: '木项链', icon: '📿', quality: 'common', stats: {maxHp: 200}},
+        {name: '皮项链', icon: '📿', quality: 'common', stats: {maxHp: 500}},
+        {name: '银项链', icon: '📿', quality: 'rare', stats: {maxHp: 1500, defense: 100}},
+        {name: '金项链', icon: '📿', quality: 'rare', stats: {maxHp: 3000, defense: 250}},
+        {name: '魔法项链', icon: '🔮', quality: 'epic', stats: {maxHp: 5000, defense: 500, regen: 15}},
+        {name: '传说项链', icon: '✨', quality: 'legendary', stats: {maxHp: 10000, defense: 1000, regen: 40, crit: 30}},
+        {name: '神话项链', icon: '🌟', quality: 'mythic', stats: {maxHp: 30000, defense: 2500, regen: 100, allResist: 50}}
     ],
     boots: [
-        {name: '草鞋', icon: '🥿', quality: 'common', stats: {moveSpeed: 5}},
-        {name: '布鞋', icon: '👟', quality: 'common', stats: {moveSpeed: 10}},
-        {name: '皮靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 25, defense: 10}},
-        {name: '钢靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 40, defense: 25}},
-        {name: '魔法靴', icon: '🔮', quality: 'epic', stats: {moveSpeed: 60, defense: 50, dodge: 10}},
-        {name: '传说靴', icon: '✨', quality: 'legendary', stats: {moveSpeed: 100, defense: 100, dodge: 25}},
-        {name: '神话靴', icon: '🌟', quality: 'mythic', stats: {moveSpeed: 200, defense: 200, dodge: 50}}
+        {name: '草鞋', icon: '🥿', quality: 'common', stats: {moveSpeed: 10, dodge: 3}},
+        {name: '布鞋', icon: '👟', quality: 'common', stats: {moveSpeed: 20, dodge: 5}},
+        {name: '皮靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 50, defense: 50, dodge: 10}},
+        {name: '钢靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 80, defense: 100, dodge: 15}},
+        {name: '魔法靴', icon: '🔮', quality: 'epic', stats: {moveSpeed: 120, defense: 200, dodge: 25}},
+        {name: '传说靴', icon: '✨', quality: 'legendary', stats: {moveSpeed: 200, defense: 400, dodge: 40, crit: 20}},
+        {name: '神话靴', icon: '🌟', quality: 'mythic', stats: {moveSpeed: 500, defense: 800, dodge: 80, crit: 50, goldBonus: 0.3}}
     ]
 };
+
+// ===== 生成神话装备随机能力 =====
+function generateMythicAbilities() {
+    const count = 3 + Math.floor(Math.random() * 8); // 3-10个能力
+    const abilities = [];
+    const shuffled = [...mythicAbilities].sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+        abilities.push(shuffled[i]);
+    }
+    return abilities;
+}
 
 // 宠物配置
 const petConfig = [
@@ -636,8 +678,14 @@ function dropEquipment() {
         });
         
         if (items.length > 0) {
-            const item = items[Math.floor(Math.random() * items.length)];
-            gameState.inventory.push({...item, slot});
+            const item = {...items[Math.floor(Math.random() * items.length)], slot};
+            
+            // 神话装备额外添加 3-10 个随机能力
+            if (item.quality === 'mythic') {
+                item.abilities = generateMythicAbilities();
+            }
+            
+            gameState.inventory.push(item);
             showDropNotification(item);
         }
     }
@@ -654,6 +702,13 @@ function showDropNotification(item) {
         mythic: '#ff0000'
     };
     
+    let abilitiesHtml = '';
+    if (item.quality === 'mythic' && item.abilities && item.abilities.length > 0) {
+        abilitiesHtml = `<div style="color: #ffcc00; font-size: 0.8em; margin-top: 8px; text-align: center;">`;
+        abilitiesHtml += item.abilities.map(a => `${a.icon} ${a.name}`).join('<br>');
+        abilitiesHtml += `</div>`;
+    }
+    
     notif.innerHTML = `
         <div style="color: ${qualityColors[item.quality]}; font-size: 2em; margin-bottom: 10px;">
             ${item.icon}
@@ -664,9 +719,10 @@ function showDropNotification(item) {
         <div style="color: #888; font-size: 0.9em; margin-top: 5px;">
             ${item.quality.toUpperCase()} 品质
         </div>
+        ${abilitiesHtml}
     `;
     notif.classList.add('show');
-    setTimeout(() => notif.classList.remove('show'), 2000);
+    setTimeout(() => notif.classList.remove('show'), item.quality === 'mythic' ? 4000 : 2000);
 }
 
 // Boss反击系统
@@ -1396,11 +1452,18 @@ function renderInventory() {
         if (item.stats.defense) statsText += `防御 +${item.stats.defense} `;
         if (item.stats.maxHp) statsText += `生命 +${item.stats.maxHp} `;
         if (item.stats.crit) statsText += `暴击 +${item.stats.crit}% `;
+        if (item.stats.critDamage) statsText += `暴伤 +${item.stats.critDamage}% `;
+        
+        let mythicBadge = '';
+        if (item.quality === 'mythic' && item.abilities && item.abilities.length > 0) {
+            mythicBadge = `<div style="color: #ffcc00; font-size: 0.75em; margin-top: 2px;">🌟x${item.abilities.length}能力</div>`;
+        }
         
         div.innerHTML = `
             <div class="item-icon">${item.icon}</div>
             <div class="item-name" style="color: ${qualityColors[item.quality]}">${item.name}</div>
             <div class="item-stats">${statsText}</div>
+            ${mythicBadge}
         `;
         grid.appendChild(div);
     });
@@ -1411,7 +1474,7 @@ function renderInventory() {
         countEl.textContent = `(${gameState.inventory.length})`;
     }
     
-    // 更新装备栏显示
+    // 更新装备栏显示 - 点击可查看详情
     Object.keys(gameState.equipment).forEach(slot => {
         const equipDiv = document.getElementById(`equip-${slot}`);
         const item = gameState.equipment[slot];
@@ -1419,11 +1482,28 @@ function renderInventory() {
             if (item) {
                 equipDiv.className = `equipped-item show quality-${item.quality}`;
                 equipDiv.style.backgroundColor = qualityColors[item.quality];
+                equipDiv.style.cursor = 'pointer';
+                // 点击查看装备详情
+                equipDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    showEquippedItemDetail(item, slot);
+                };
             } else {
                 equipDiv.className = 'equipped-item';
+                equipDiv.style.cursor = 'default';
+                equipDiv.onclick = null;
             }
         }
     });
+}
+
+// ===== 查看已装备物品详情 =====
+function showEquippedItemDetail(item, slot) {
+    // 查找物品在背包中的索引（如果存在）
+    const index = gameState.inventory.findIndex(i => 
+        i.name === item.name && i.slot === item.slot && i.quality === item.quality
+    );
+    showItemDetail(item, index >= 0 ? index : -1);
 }
 
 let selectedItem = null;
@@ -1474,40 +1554,67 @@ function showItemDetail(item, index) {
             damageReduce: '伤害减免',
             regen: '生命回复',
             moveSpeed: '移动速度',
-            dodge: '闪避率'
+            dodge: '闪避率',
+            goldBonus: '金币加成'
         };
         const name = statNames[stat] || stat;
-        const value = stat.includes('Damage') || stat.includes('Reduce') || stat.includes('Resist') || stat === 'crit' ? `${item.stats[stat]}%` : item.stats[stat];
+        const value = stat.includes('Bonus') || stat.includes('Damage') || stat.includes('Reduce') || stat.includes('Resist') || stat === 'crit' ? `${item.stats[stat] * 100}%` : item.stats[stat];
         statsHTML += `<div>${name}: +${value}</div>`;
     });
+    
+    // 神话装备特殊能力
+    if (item.quality === 'mythic' && item.abilities && item.abilities.length > 0) {
+        statsHTML += `<div style="margin-top: 15px; border-top: 1px solid #444; padding-top: 10px;">`;
+        statsHTML += `<div style="color: #ffcc00; font-weight: bold; margin-bottom: 8px;">🌟 神话能力 (${item.abilities.length})</div>`;
+        item.abilities.forEach(ability => {
+            statsHTML += `<div style="color: #ff66ff; font-size: 0.9em; margin: 3px 0;">${ability.icon} ${ability.name}: ${ability.desc}</div>`;
+        });
+        statsHTML += `</div>`;
+    }
+    
     document.getElementById('itemDetailStats').innerHTML = statsHTML;
     
     const currentEquipped = gameState.equipment[item.slot];
-    document.getElementById('itemActionBtn').textContent = currentEquipped ? '更换装备' : '装备';
+    // 如果物品已在身上，显示"卸下装备"；否则显示"装备"或"更换装备"
+    const isEquipped = selectedItemIndex === -1 || (currentEquipped && currentEquipped.name === item.name);
+    document.getElementById('itemActionBtn').textContent = isEquipped ? '卸下装备' : (currentEquipped ? '更换装备' : '装备');
     
     document.getElementById('itemDetailModal').classList.add('active');
 }
 
 function handleItemAction() {
-    if (selectedItem) {
-        const slot = selectedItem.slot;
-        
-        // 如果有已装备的物品，换下来
-        if (gameState.equipment[slot]) {
-            gameState.inventory.push(gameState.equipment[slot]);
-        }
-        
-        // 装备新物品
-        gameState.equipment[slot] = selectedItem;
-        gameState.inventory.splice(selectedItemIndex, 1);
-        
-        showNotification(`装备成功: ${selectedItem.name}`);
+    if (!selectedItem) return;
+    
+    const slot = selectedItem.slot;
+    
+    // 如果查看的是已装备物品且不在背包中（index = -1），则卸下装备
+    if (selectedItemIndex === -1) {
+        gameState.inventory.push(selectedItem);
+        gameState.equipment[slot] = null;
+        showNotification(`卸下装备: ${selectedItem.name}`);
         closeItemDetailModal();
         renderInventory();
         updatePlayerHP();
         updateDisplay();
         saveGame();
+        return;
     }
+    
+    // 如果有已装备的物品，换下来
+    if (gameState.equipment[slot]) {
+        gameState.inventory.push(gameState.equipment[slot]);
+    }
+    
+    // 装备新物品
+    gameState.equipment[slot] = selectedItem;
+    gameState.inventory.splice(selectedItemIndex, 1);
+    
+    showNotification(`装备成功: ${selectedItem.name}`);
+    closeItemDetailModal();
+    renderInventory();
+    updatePlayerHP();
+    updateDisplay();
+    saveGame();
 }
 
 function closeItemDetailModal() {

@@ -999,6 +999,7 @@ function upgradeDPS() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.dpsLevel += actualUpgrades;
+        gameState.dps = gameState.dpsLevel;
         showNotification(`⚔️ 秒伤 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
         saveGame();

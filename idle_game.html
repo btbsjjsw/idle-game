@@ -30,6 +30,26 @@
             </div>
         </div>
 
+        <!-- 玩家状态栏 -->
+        <div class="player-status-bar">
+            <div class="player-info">
+                <div class="player-avatar">🧙‍♂️</div>
+                <div class="player-stats">
+                    <div class="player-name">勇者Lv.<span id="playerLevel">1</span></div>
+                    <div class="player-hp-bar">
+                        <div class="player-hp-fill" id="playerHpFill"></div>
+                        <div class="player-hp-text">
+                            ❤️ <span id="playerCurrentHp">100</span>/<span id="playerMaxHp">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="player-inventory">
+                <button class="inventory-btn" onclick="openInventoryModal()">🎒 背包</button>
+                <button class="pet-btn" onclick="openPetModal()">🐾 宠物</button>
+            </div>
+        </div>
+
         <!-- Boss区域 -->
         <div class="boss-area">
             <div class="boss-info">
@@ -43,7 +63,9 @@
                 </div>
             </div>
             <div class="boss-click-area" id="bossClickArea" onclick="attackBoss(event)">
-                <div class="boss-icon" id="bossIcon">👹</div>
+                <div class="boss-image" id="bossImage">
+                    <img src="" alt="燃气表" id="bossImg">
+                </div>
             </div>
         </div>
 
@@ -75,9 +97,12 @@
                 </button>
             </div>
         </div>
+
+        <!-- 掉落提示 -->
+        <div class="drop-notification" id="dropNotification"></div>
     </div>
 
-    <!-- 神器模态窗口（全屏） -->
+    <!-- 神器模态窗口 -->
     <div class="modal-overlay" id="artifactModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -88,8 +113,86 @@
                 <button class="modal-close-btn" onclick="closeArtifactModal()">✕</button>
             </div>
             <div class="modal-body">
-                <div class="artifact-grid" id="artifactGrid">
-                    <!-- 40个神器卡片动态生成 -->
+                <div class="artifact-grid" id="artifactGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背包/装备模态窗口 -->
+    <div class="modal-overlay" id="inventoryModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2>🎒 装备背包</h2>
+                <button class="modal-close-btn" onclick="closeInventoryModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="equipment-slots">
+                    <h3>装备栏</h3>
+                    <div class="slots-grid">
+                        <div class="equip-slot" data-slot="weapon">
+                            <div class="slot-icon">⚔️</div>
+                            <div class="slot-name">武器</div>
+                            <div class="equipped-item" id="equip-weapon"></div>
+                        </div>
+                        <div class="equip-slot" data-slot="helmet">
+                            <div class="slot-icon">🪖</div>
+                            <div class="slot-name">头盔</div>
+                            <div class="equipped-item" id="equip-helmet"></div>
+                        </div>
+                        <div class="equip-slot" data-slot="armor">
+                            <div class="slot-icon">🛡️</div>
+                            <div class="slot-name">护甲</div>
+                            <div class="equipped-item" id="equip-armor"></div>
+                        </div>
+                        <div class="equip-slot" data-slot="ring">
+                            <div class="slot-icon">💍</div>
+                            <div class="slot-name">戒指</div>
+                            <div class="equipped-item" id="equip-ring"></div>
+                        </div>
+                        <div class="equip-slot" data-slot="necklace">
+                            <div class="slot-icon">📿</div>
+                            <div class="slot-name">项链</div>
+                            <div class="equipped-item" id="equip-necklace"></div>
+                        </div>
+                        <div class="equip-slot" data-slot="boots">
+                            <div class="slot-icon">👢</div>
+                            <div class="slot-name">鞋子</div>
+                            <div class="equipped-item" id="equip-boots"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="inventory-list">
+                    <h3>背包物品</h3>
+                    <div class="inventory-grid" id="inventoryGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 宠物模态窗口 -->
+    <div class="modal-overlay" id="petModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2>🐾 宠物系统</h2>
+                <div class="pet-points-banner">
+                    宠物点: <span id="petPointsDisplay">0</span>
+                </div>
+                <button class="modal-close-btn" onclick="closePetModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="active-pet-section">
+                    <h3>当前出战宠物</h3>
+                    <div class="active-pet-display" id="activePetDisplay">
+                        <div class="no-pet">未装备宠物</div>
+                    </div>
+                </div>
+                <div class="pet-list-section">
+                    <h3>宠物列表</h3>
+                    <div class="pet-grid" id="petGrid"></div>
+                </div>
+                <div class="pet-shop-section">
+                    <h3>宠物商店</h3>
+                    <div class="pet-shop-grid" id="petShopGrid"></div>
                 </div>
             </div>
         </div>
@@ -106,6 +209,38 @@
             <div class="modal-buttons">
                 <button class="confirm-btn" onclick="rebirth()">确认重生</button>
                 <button class="cancel-btn" onclick="closeRebirthModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content game-over-content">
+            <h2>💀 游戏结束</h2>
+            <p>你被 Boss 击败了！</p>
+            <div class="game-over-stats">
+                <p>到达关卡: <span id="gameOverLevel">1</span></p>
+                <p>获得金币: <span id="gameOverGold">0</span></p>
+            </div>
+            <div class="modal-buttons">
+                <button class="confirm-btn" onclick="revive()">复活 (消耗 100 金币)</button>
+                <button class="cancel-btn" onclick="restartGame()">重新开始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 装备详情弹窗 -->
+    <div class="modal" id="itemDetailModal">
+        <div class="modal-content item-detail-content">
+            <h2 id="itemDetailName">装备名称</h2>
+            <div class="item-detail-info">
+                <div class="item-quality" id="itemDetailQuality">品质</div>
+                <div class="item-level">等级需求: <span id="itemDetailLevel">1</span></div>
+            </div>
+            <div class="item-stats" id="itemDetailStats"></div>
+            <div class="modal-buttons">
+                <button class="confirm-btn" id="itemActionBtn" onclick="handleItemAction()">装备</button>
+                <button class="cancel-btn" onclick="closeItemDetailModal()">关闭</button>
             </div>
         </div>
     </div>

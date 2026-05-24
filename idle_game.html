@@ -123,59 +123,39 @@
         <div class="stats-panel">
             <h2>📊 详细数据</h2>
             
-            <!-- 点击伤害详情 -->
+            <!-- 💢 DPS来源详情 -->
             <div class="stats-section">
-                <div class="stats-section-title">⚔️ 点击伤害</div>
-                <div class="stats-row">
-                    <span class="stats-label">基础伤害</span>
-                    <span class="stats-value" id="statClickBase">1</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">神器加成</span>
-                    <span class="stats-value" id="statClickArtifact">×1.00</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">宠物加成</span>
-                    <span class="stats-value" id="statClickPet">+0</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">装备加成</span>
-                    <span class="stats-value" id="statClickEquip">+0</span>
-                </div>
-                <div class="stats-row total">
-                    <span class="stats-label">总计</span>
-                    <span class="stats-value" id="statClickTotal">1</span>
-                </div>
-            </div>
-            
-            <!-- 秒伤详情 -->
-            <div class="stats-section">
-                <div class="stats-section-title">💢 每秒伤害(DPS)</div>
-                <div class="stats-row">
-                    <span class="stats-label">基础DPS</span>
-                    <span class="stats-value" id="statDpsBase">0</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">神器加成</span>
-                    <span class="stats-value" id="statDpsArtifact">×1.00</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">宠物加成</span>
-                    <span class="stats-value" id="statDpsPet">+0</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">装备加成</span>
-                    <span class="stats-value" id="statDpsEquip">+0</span>
-                </div>
-                <div class="stats-row total">
-                    <span class="stats-label">总计</span>
+                <div class="stats-section-title">💢 DPS 每秒伤害</div>
+                <div class="stats-total-row">
+                    <span>总DPS</span>
                     <span class="stats-value" id="statDpsTotal">0</span>
                 </div>
+                <div class="stats-dps-list" id="dpsBreakdown"></div>
             </div>
             
-            <!-- 暴击率 -->
+            <!-- 💰 金币来源详情 -->
             <div class="stats-section">
-                <div class="stats-section-title">💥 暴击率</div>
+                <div class="stats-section-title">💰 金币 每秒收益</div>
+                <div class="stats-total-row">
+                    <span>总金币/秒</span>
+                    <span class="stats-value" id="statGoldPerSec">0</span>
+                </div>
+                <div class="stats-dps-list" id="goldBreakdown"></div>
+            </div>
+            
+            <!-- ⚔️ 点击伤害来源 -->
+            <div class="stats-section">
+                <div class="stats-section-title">⚔️ 点击伤害</div>
+                <div class="stats-total-row">
+                    <span>总点击伤害</span>
+                    <span class="stats-value" id="statClickTotal">1</span>
+                </div>
+                <div class="stats-dps-list" id="clickBreakdown"></div>
+            </div>
+            
+            <!-- 💥 暴击 -->
+            <div class="stats-section">
+                <div class="stats-section-title">💥 暴击</div>
                 <div class="stats-row">
                     <span class="stats-label">暴击率</span>
                     <span class="stats-value" id="statCritRate">0%</span>
@@ -186,36 +166,7 @@
                 </div>
             </div>
             
-            <!-- 金币统计 -->
-            <div class="stats-section">
-                <div class="stats-section-title">💰 金币收益</div>
-                <div class="stats-row">
-                    <span class="stats-label">伤害金币/秒</span>
-                    <span class="stats-value" id="statGoldPerSec">0</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">金币磁体</span>
-                    <span class="stats-value" id="statGoldMagnet">×1.00</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">宝藏地图</span>
-                    <span class="stats-value" id="statTreasureMap">×1.00</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">黄金双倍</span>
-                    <span class="stats-value" id="statDoubleGold">×1.00</span>
-                </div>
-                <div class="stats-row">
-                    <span class="stats-label">宠物金币</span>
-                    <span class="stats-value" id="statPetGold">×1.00</span>
-                </div>
-                <div class="stats-row total">
-                    <span class="stats-label">击杀金币乘算</span>
-                    <span class="stats-value" id="statGoldMultiplier">×1.00</span>
-                </div>
-            </div>
-            
-            <!-- 其他属性 -->
+            <!-- ✨ 其他属性 -->
             <div class="stats-section">
                 <div class="stats-section-title">✨ 其他属性</div>
                 <div class="stats-row">

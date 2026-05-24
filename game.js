@@ -309,11 +309,15 @@ function attackBoss(event) {
     
     damage *= critMultiplier;
     
+    // 每点伤害给1金币（乘以攻击次数）
+    let totalDamageDealt = damage * hits;
+    gameState.gold += Math.floor(totalDamageDealt);
+    
     // 应用伤害
     for (let i = 0; i < hits; i++) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
-        if (i === 0) showDamageNumber(damage * hits, event.clientX, event.clientY, isCrit);
+        if (i === 0) showDamageNumber(totalDamageDealt, event.clientX, event.clientY, isCrit);
     }
     
     // Boss受击动画
@@ -324,6 +328,7 @@ function attackBoss(event) {
     if (gameState.currentHP <= 0) killBoss();
     
     updateHPBar();
+    updateDisplay();
     saveGame();
 }
 
@@ -345,12 +350,12 @@ function showDamageNumber(damage, x, y, isCrit) {
     setTimeout(() => dmgFloat.remove(), 1000);
 }
 
-// 击杀Boss
+// 击杀Boss（额外奖励，因为之前每点伤害已经给金币了）
 function killBoss() {
-    const goldReward = gameState.level * 10 + Math.floor(gameState.maxHP * 0.01);
+    const goldReward = gameState.level * 5; // 击杀额外奖励
     let finalGold = goldReward;
     
-    // 金币加成
+    // 金币加成（只对击杀奖励生效）
     if (gameState.artifacts.goldMagnet > 0) finalGold *= Math.pow(1.5, gameState.artifacts.goldMagnet);
     if (gameState.artifacts.treasureMap > 0) finalGold *= Math.pow(1.5, gameState.artifacts.treasureMap);
     if (gameState.artifacts.doubleGold > 0) finalGold *= Math.pow(2, gameState.artifacts.doubleGold);
@@ -523,7 +528,10 @@ function restartGame() {
     location.reload();
 }
 
-// 更新Boss
+// 更新Boss（随机图片，尽量不重复）
+let lastBossImageIndex = -1;
+let lastSecondLastImageIndex = -1;
+
 function updateBoss() {
     gameState.maxHP = Math.floor(100 * Math.pow(1.8, gameState.level - 1));
     gameState.currentHP = gameState.maxHP;
@@ -535,15 +543,34 @@ function updateBoss() {
         "燃气表-X型 智能远传型"
     ];
     
-    const bossIndex = (gameState.level - 1) % bossNames.length;
-    document.getElementById('bossName').textContent = bossNames[bossIndex];
+    document.getElementById('bossName').textContent = bossNames[(gameState.level - 1) % bossNames.length];
     document.getElementById('bossLevel').textContent = gameState.level;
+    
+    // 随机选择图片，尽量避免重复
+    let availableIndices = [];
+    for (let i = 0; i < bossImages.length; i++) {
+        if (i !== lastBossImageIndex && i !== lastSecondLastImageIndex) {
+            availableIndices.push(i);
+        }
+    }
+    
+    // 如果所有图片都被排除了（只有2张图的情况），允许重复
+    if (availableIndices.length === 0) {
+        availableIndices = Array.from({length: bossImages.length}, (_, i) => i);
+    }
+    
+    // 随机选择
+    const newIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+    
+    // 更新历史记录
+    lastSecondLastImageIndex = lastBossImageIndex;
+    lastBossImageIndex = newIndex;
     
     // 更新Boss图片
     const img = document.getElementById('bossImg');
     if (img) {
-        img.src = bossImages[bossIndex];
-        img.alt = bossNames[bossIndex];
+        img.src = bossImages[newIndex];
+        img.alt = bossNames[(gameState.level - 1) % bossNames.length];
     }
     
     updateHPBar();

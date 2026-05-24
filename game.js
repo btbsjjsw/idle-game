@@ -1366,6 +1366,7 @@ function getNextUnlockPrice() {
 
 function renderArtifacts() {
     const grid = document.getElementById('artifactGrid');
+    if (!grid) return;
     grid.innerHTML = '';
     
     const unlockedCount = artifactConfig.filter(a => gameState.artifacts[a.id] !== undefined).length;
@@ -1373,44 +1374,33 @@ function renderArtifacts() {
     const allUnlocked = unlockedCount >= totalCount;
     const nextUnlockPrice = getNextUnlockPrice();
     
-    // 添加购买区域
-    const shopSection = document.createElement('div');
-    shopSection.style.cssText = 'grid-column: 1 / -1; background: #0a0a0a; border: 2px solid #d4af37; border-radius: 10px; padding: 15px; margin-bottom: 15px;';
-    
-    if (allUnlocked) {
-        shopSection.innerHTML = `
-            <h3 style="text-align: center; color: #d4af37; margin-bottom: 15px;">🎰 神器商店</h3>
-            <div style="text-align: center; color: #888; padding: 20px;">
-                ✅ 所有神器已解锁！
-            </div>
-        `;
-    } else {
-        shopSection.innerHTML = `
-            <h3 style="text-align: center; color: #d4af37; margin-bottom: 15px;">🎰 神器商店</h3>
-            <div style="text-align: center; margin-bottom: 10px; color: #888;">
-                已解锁: ${unlockedCount}/${totalCount}
-            </div>
-            <div style="display: flex; justify-content: center;">
-                <button class="artifact-buy-btn" style="padding: 12px 25px; font-size: 1.1em;" onclick="buyRandomArtifact()" 
-                        ${gameState.gold >= nextUnlockPrice ? '' : 'disabled'}>
-                    💰 ${formatNumber(nextUnlockPrice)} 金币<br><span style="font-size: 0.8em;">随机解锁一个神器</span>
-                </button>
-            </div>
-        `;
+    // 更新商店信息（使用HTML模板里已有的DOM元素）
+    const shopInfo = document.getElementById('artifactShopInfo');
+    const shopBtn = document.getElementById('artifactShopBtn');
+    if (shopInfo) {
+        if (allUnlocked) {
+            shopInfo.textContent = `已解锁: ${unlockedCount}/${totalCount} ✅`;
+        } else {
+            shopInfo.textContent = `已解锁: ${unlockedCount}/${totalCount} | 下一把: ${formatNumber(nextUnlockPrice)} 💰`;
+        }
     }
-    grid.appendChild(shopSection);
+    if (shopBtn) {
+        shopBtn.disabled = allUnlocked || gameState.gold < nextUnlockPrice;
+        if (allUnlocked) {
+            shopBtn.textContent = '✅ 全部解锁';
+        } else {
+            shopBtn.textContent = `💰 ${formatNumber(nextUnlockPrice)} 随机解锁`;
+        }
+    }
     
-    // 只显示已解锁的神器
+    // 添加神器列表标题
     const headerDiv = document.createElement('div');
-    headerDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; color: #888; margin-bottom: 10px;';
-    headerDiv.innerHTML = `已拥有: ${unlockedCount} 个神器`;
+    headerDiv.style.cssText = 'grid-column: 1 / -1; text-align: center; color: var(--text-dim); font-size: 0.78em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;';
+    headerDiv.innerHTML = `已拥有: ${unlockedCount} / ${totalCount} 个神器`;
     grid.appendChild(headerDiv);
     
     artifactConfig.forEach(artifact => {
-        // 只显示已解锁的神器
-        if (gameState.artifacts[artifact.id] === undefined) {
-            return; // 跳过未解锁的神器
-        }
+        if (gameState.artifacts[artifact.id] === undefined) return;
         
         const level = gameState.artifacts[artifact.id] || 0;
         const multiplier = document.getElementById('artifactMultiplier')?.value || '1';
@@ -1421,24 +1411,21 @@ function renderArtifacts() {
             totalCost += getArtifactUpgradeCost(artifact, level + i);
         }
         const canAfford = gameState.gold >= totalCost && maxUpgrades > 0;
-        const costText = multiplier === 'max' ? formatNumber(totalCost) : formatNumber(totalCost);
         
         const card = document.createElement('div');
-        card.className = 'artifact-card';
+        card.className = 'art-card';
         card.innerHTML = `
-            <div class="artifact-icon">${artifact.icon}</div>
-            <div class="artifact-name">${artifact.name}</div>
-            <div class="artifact-level">等级: ${level}</div>
-            <div class="artifact-desc">${artifact.desc}</div>
-            <button class="artifact-buy-btn" onclick="upgradeArtifact('${artifact.id}')" 
+            <div class="art-icon">${artifact.icon}</div>
+            <div class="art-name">${artifact.name}</div>
+            <div class="art-lv">等级: ${level}</div>
+            <div class="art-desc">${artifact.desc}</div>
+            <button class="art-btn" onclick="upgradeArtifact('${artifact.id}')" 
                     ${canAfford ? '' : 'disabled'}>
-                ⬆️ x${maxUpgrades} (${costText} 💰)
+                ⬆️ ×${maxUpgrades} — ${formatNumber(totalCost)} 💰
             </button>
         `;
         grid.appendChild(card);
     });
-    
-    document.getElementById('artifactPointsDisplay').textContent = formatNumber(gameState.gold);
 }
 
 // 获取神器升级费用（无限升级）

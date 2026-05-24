@@ -67,20 +67,23 @@
             </div>
         </div>
 
-        <!-- 伤害统计 -->
-        <div class="damage-stats">
-            <div class="stat-item">
-                <span class="stat-label">点击伤害:</span>
-                <span class="stat-value" id="clickDamage">1</span>
+        <!-- 主游戏区域（左侧） -->
+        <div class="main-game-area">
+        
+            <!-- 伤害统计 -->
+            <div class="damage-stats">
+                <div class="stat-item">
+                    <span class="stat-label">点击伤害:</span>
+                    <span class="stat-value" id="clickDamage">1</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">每秒伤害:</span>
+                    <span class="stat-value" id="dps">0</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">每秒伤害:</span>
-                <span class="stat-value" id="dps">0</span>
-            </div>
-        </div>
 
-        <!-- 升级面板 -->
-        <div class="upgrade-panel">
+            <!-- 升级面板 -->
+            <div class="upgrade-panel">
             <h2>⚒️ 升级面板</h2>
             <div class="upgrade-multiplier">
                 <span>升级数量:</span>
@@ -113,7 +116,120 @@
         <div class="reset-game-area">
             <button class="reset-btn" onclick="confirmResetGame()">🗑️ 清除缓存 重新开始</button>
         </div>
-    </div>
+        
+        </div><!-- 结束 main-game-area -->
+
+        <!-- 详细数据面板（右侧） -->
+        <div class="stats-panel">
+            <h2>📊 详细数据</h2>
+            
+            <!-- 点击伤害详情 -->
+            <div class="stats-section">
+                <div class="stats-section-title">⚔️ 点击伤害</div>
+                <div class="stats-row">
+                    <span class="stats-label">基础伤害</span>
+                    <span class="stats-value" id="statClickBase">1</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">神器加成</span>
+                    <span class="stats-value" id="statClickArtifact">×1.00</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">宠物加成</span>
+                    <span class="stats-value" id="statClickPet">+0</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">装备加成</span>
+                    <span class="stats-value" id="statClickEquip">+0</span>
+                </div>
+                <div class="stats-row total">
+                    <span class="stats-label">总计</span>
+                    <span class="stats-value" id="statClickTotal">1</span>
+                </div>
+            </div>
+            
+            <!-- 秒伤详情 -->
+            <div class="stats-section">
+                <div class="stats-section-title">💢 每秒伤害(DPS)</div>
+                <div class="stats-row">
+                    <span class="stats-label">基础DPS</span>
+                    <span class="stats-value" id="statDpsBase">0</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">神器加成</span>
+                    <span class="stats-value" id="statDpsArtifact">×1.00</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">宠物加成</span>
+                    <span class="stats-value" id="statDpsPet">+0</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">装备加成</span>
+                    <span class="stats-value" id="statDpsEquip">+0</span>
+                </div>
+                <div class="stats-row total">
+                    <span class="stats-label">总计</span>
+                    <span class="stats-value" id="statDpsTotal">0</span>
+                </div>
+            </div>
+            
+            <!-- 暴击率 -->
+            <div class="stats-section">
+                <div class="stats-section-title">💥 暴击率</div>
+                <div class="stats-row">
+                    <span class="stats-label">暴击率</span>
+                    <span class="stats-value" id="statCritRate">0%</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">暴击伤害</span>
+                    <span class="stats-value" id="statCritDmg">×5.00</span>
+                </div>
+            </div>
+            
+            <!-- 金币统计 -->
+            <div class="stats-section">
+                <div class="stats-section-title">💰 金币收益</div>
+                <div class="stats-row">
+                    <span class="stats-label">伤害金币/秒</span>
+                    <span class="stats-value" id="statGoldPerSec">0</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">金币磁体</span>
+                    <span class="stats-value" id="statGoldMagnet">×1.00</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">宝藏地图</span>
+                    <span class="stats-value" id="statTreasureMap">×1.00</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">黄金双倍</span>
+                    <span class="stats-value" id="statDoubleGold">×1.00</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">宠物金币</span>
+                    <span class="stats-value" id="statPetGold">×1.00</span>
+                </div>
+                <div class="stats-row total">
+                    <span class="stats-label">击杀金币乘算</span>
+                    <span class="stats-value" id="statGoldMultiplier">×1.00</span>
+                </div>
+            </div>
+            
+            <!-- 其他属性 -->
+            <div class="stats-section">
+                <div class="stats-section-title">✨ 其他属性</div>
+                <div class="stats-row">
+                    <span class="stats-label">闪避率</span>
+                    <span class="stats-value" id="statDodge">0%</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">生命回复</span>
+                    <span class="stats-value" id="statRegen">0/s</span>
+                </div>
+            </div>
+        </div>
+        
+    </div><!-- 结束 game-container -->
 
     <!-- 神器模态窗口 -->
     <div class="modal-overlay" id="artifactModal">

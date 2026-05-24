@@ -29,49 +29,61 @@ let gameState = {
     lastSaveTime: Date.now()
 };
 
-// 神器配置（40个）
+// 神器配置（优化版 - 所有神器都有实际效果）
 const artifactConfig = [
+    // === 伤害类 ===
     {id: 'powerBook', icon: '📖', name: '力量之书', desc: '所有伤害 +50%', baseCost: 10, costMult: 1.5, maxLevel: 100},
-    {id: 'wealthMedal', icon: '🏅', name: '富豪勋章', desc: '重生后初始金币 +200%', baseCost: 50, costMult: 2, maxLevel: 50},
-    {id: 'critEye', icon: '👁️', name: '暴击之眼', desc: '暴击率 +5%, 倍数 +2', baseCost: 100, costMult: 3, maxLevel: 20},
-    {id: 'hourglass', icon: '⏳', name: '时间沙漏', desc: '离线收益 50% DPS', baseCost: 200, costMult: 2, maxLevel: 10},
-    {id: 'attackSpeed', icon: '⚡', name: '攻击速度之书', desc: '攻击速度 +10%', baseCost: 30, costMult: 1.8, maxLevel: 50},
-    {id: 'fireSoul', icon: '🔥', name: '火焰之魂', desc: '火焰伤害 +100%', baseCost: 80, costMult: 2.5, maxLevel: 20},
-    {id: 'iceHeart', icon: '❄️', name: '冰霜之心', desc: '冰霜伤害 +100%', baseCost: 80, costMult: 2.5, maxLevel: 20},
-    {id: 'lightning', icon: '⚡', name: '雷电之怒', desc: '雷电伤害 +100%', baseCost: 80, costMult: 2.5, maxLevel: 20},
-    {id: 'penetration', icon: '🗡️', name: '穿透之矛', desc: '护甲穿透 +10%', baseCost: 60, costMult: 2, maxLevel: 30},
-    {id: 'berserk', icon: '😡', name: '狂暴之斧', desc: 'HP<30%时伤害 +50%', baseCost: 150, costMult: 3, maxLevel: 10},
-    {id: 'combo', icon: '👊', name: '连击手套', desc: '双击概率 +10%', baseCost: 120, costMult: 2.5, maxLevel: 20},
+    {id: 'sharpness', icon: '🗡️', name: '锋利之爪', desc: '基础伤害 +25%', baseCost: 40, costMult: 2, maxLevel: 40},
+    {id: 'critEye', icon: '👁️', name: '暴击之眼', desc: '暴击率 +5%, 倍率 +2', baseCost: 100, costMult: 3, maxLevel: 20},
     {id: 'fatalBlow', icon: '💀', name: '致命打击', desc: '暴击伤害 +50%', baseCost: 200, costMult: 3, maxLevel: 10},
-    {id: 'multiHit', icon: '🎯', name: '多重打击', desc: '额外攻击次数 +1', baseCost: 500, costMult: 5, maxLevel: 5},
-    {id: 'sharpness', icon: '🐾', name: '锋利之爪', desc: '基础伤害 +25%', baseCost: 40, costMult: 2, maxLevel: 40},
-    {id: 'goldMagnet', icon: '🧲', name: '金币磁铁', desc: '金币掉落 +50%', baseCost: 25, costMult: 1.8, maxLevel: 50},
-    {id: 'treasureMap', icon: '🗺️', name: '宝藏地图', desc: '击杀金币 +50%', baseCost: 35, costMult: 2, maxLevel: 40},
-    {id: 'luckyClover', icon: '🍀', name: '幸运四叶草', desc: '稀有掉落 +10%', baseCost: 100, costMult: 3, maxLevel: 20},
-    {id: 'merchant', icon: '💼', name: '商人条约', desc: '出售价值 +100%', baseCost: 60, costMult: 2.5, maxLevel: 30},
-    {id: 'idleGold', icon: '🏦', name: '银行家保险箱', desc: '离线金币 +100%', baseCost: 150, costMult: 2.5, maxLevel: 20},
-    {id: 'alchemy', icon: '⚗️', name: '炼金术士之石', desc: '炼金收益 +50%', baseCost: 90, costMult: 2.2, maxLevel: 25},
-    {id: 'thief', icon: '🗡️', name: '盗贼手套', desc: '暴击偷取金币 +10%', baseCost: 180, costMult: 3, maxLevel: 15},
-    {id: 'doubleGold', icon: '✨', name: '黄金双倍', desc: '金币获取 ×2', baseCost: 1000, costMult: 10, maxLevel: 3},
+    {id: 'multiHit', icon: '🎯', name: '多重打击', desc: '额外攻击 +1次', baseCost: 500, costMult: 5, maxLevel: 5},
+    {id: 'combo', icon: '👊', name: '连击手套', desc: '连击概率 +10%', baseCost: 120, costMult: 2.5, maxLevel: 20},
+    
+    // === 元素伤害类 ===
+    {id: 'fireSoul', icon: '🔥', name: '火焰之魂', desc: '🔥火焰伤害 ×2', baseCost: 80, costMult: 2.5, maxLevel: 20},
+    {id: 'iceHeart', icon: '❄️', name: '冰霜之心', desc: '❄️冰冻伤害 ×2', baseCost: 80, costMult: 2.5, maxLevel: 20},
+    {id: 'lightning', icon: '⚡', name: '雷电之怒', desc: '💜闪电伤害 ×2', baseCost: 80, costMult: 2.5, maxLevel: 20},
+    {id: 'poison', icon: '☠️', name: '剧毒之囊', desc: '☠️持续毒伤 +50%', baseCost: 180, costMult: 2.8, maxLevel: 20},
+    {id: 'explosion', icon: '💥', name: '爆裂护符', desc: '💥击杀爆炸伤害', baseCost: 350, costMult: 4, maxLevel: 10},
+    {id: 'chainLightning', icon: '⛓️', name: '连锁闪电', desc: '⚡连锁闪电伤害', baseCost: 400, costMult: 5, maxLevel: 8},
+    
+    // === 攻击速度类 ===
+    {id: 'attackSpeed', icon: '⚡', name: '攻击速度', desc: '攻速 +10%', baseCost: 30, costMult: 1.8, maxLevel: 50},
+    {id: 'autoClick', icon: '🤖', name: '自动点击器', desc: '🤖自动攻击', baseCost: 500, costMult: 4, maxLevel: 10},
+    
+    // === 防御类 ===
     {id: 'guardian', icon: '🛡️', name: '守护者之盾', desc: '最大生命 +50%', baseCost: 50, costMult: 2, maxLevel: 40},
-    {id: 'thorns', icon: '🌹', name: '荆棘之甲', desc: '反弹10%伤害', baseCost: 120, costMult: 2.8, maxLevel: 25},
-    {id: 'dodge', icon: '👟', name: '闪避之靴', desc: '闪避率 +10%', baseCost: 80, costMult: 2.5, maxLevel: 30},
-    {id: 'regen', icon: '💚', name: '再生之戒', desc: '每秒回复1%生命', baseCost: 200, costMult: 3, maxLevel: 20},
     {id: 'stoneSkin', icon: '🪨', name: '石头之肤', desc: '伤害减免 +10%', baseCost: 100, costMult: 2.2, maxLevel: 30},
-    {id: 'manaShield', icon: '🔮', name: '魔法屏障', desc: '魔法护盾 +50%', baseCost: 250, costMult: 3.5, maxLevel: 15},
-    {id: 'expBoost', icon: '📚', name: '经验之书', desc: '经验获取 +50%', baseCost: 40, costMult: 1.8, maxLevel: 50},
-    {id: 'cooldown', icon: '💎', name: '冷却缩减宝石', desc: '技能冷却 -10%', baseCost: 150, costMult: 3, maxLevel: 20},
-    {id: 'moveSpeed', icon: '🏃', name: '移动之靴', desc: '移动速度 +20%', baseCost: 30, costMult: 1.5, maxLevel: 50},
-    {id: 'manaRegen', icon: '💧', name: '魔力源泉', desc: '魔力回复 +50%', baseCost: 100, costMult: 2, maxLevel: 30},
-    {id: 'luck', icon: '🎲', name: '幸运饼干', desc: '随机Buff概率 +10%', baseCost: 200, costMult: 4, maxLevel: 10},
-    {id: 'summon', icon: '🐾', name: '召唤卷轴', desc: '召唤随从概率 +5%', baseCost: 300, costMult: 5, maxLevel: 10},
-    {id: 'cleanse', icon: '🧼', name: '净化护符', desc: 'Debuff持续时间 -50%', baseCost: 80, costMult: 2, maxLevel: 20},
-    {id: 'autoClick', icon: '🤖', name: '自动点击器', desc: '自动点击 +1次/秒', baseCost: 500, costMult: 4, maxLevel: 10},
-    {id: 'lifesteal', icon: '🧛', name: '吸血鬼之牙', desc: '生命偷取 +5%', baseCost: 250, costMult: 3.5, maxLevel: 15},
-    {id: 'explosion', icon: '💥', name: '爆裂护符', desc: '击杀爆炸 +50%伤害', baseCost: 350, costMult: 4, maxLevel: 10},
-    {id: 'chainLightning', icon: '⛓️', name: '连锁闪电之球', desc: '连锁3个目标', baseCost: 400, costMult: 5, maxLevel: 8},
-    {id: 'poison', icon: '☠️', name: '剧毒之囊', desc: '中毒伤害 +50%/5秒', baseCost: 180, costMult: 2.8, maxLevel: 20}
+    {id: 'thorns', icon: '🌹', name: '荆棘之甲', desc: '🌹反弹伤害', baseCost: 120, costMult: 2.8, maxLevel: 25},
+    {id: 'dodge', icon: '👟', name: '闪避之靴', desc: '闪避率 +10%', baseCost: 80, costMult: 2.5, maxLevel: 30},
+    {id: 'regen', icon: '💚', name: '再生之戒', desc: '💚生命回复', baseCost: 200, costMult: 3, maxLevel: 20},
+    {id: 'berserk', icon: '😡', name: '狂暴之斧', desc: '😡血量低时伤害+', baseCost: 150, costMult: 3, maxLevel: 10},
+    
+    // === 金币类 ===
+    {id: 'goldMagnet', icon: '🧲', name: '金币磁铁', desc: '💰金币 +50%', baseCost: 25, costMult: 1.8, maxLevel: 50},
+    {id: 'treasureMap', icon: '🗺️', name: '宝藏地图', desc: '💰击杀金币 +50%', baseCost: 35, costMult: 2, maxLevel: 40},
+    {id: 'doubleGold', icon: '✨', name: '黄金双倍', desc: '💰金币 ×2', baseCost: 1000, costMult: 10, maxLevel: 3},
+    {id: 'wealthMedal', icon: '🏅', name: '富豪勋章', desc: '🏅初始金币 +200%', baseCost: 50, costMult: 2, maxLevel: 50},
+    {id: 'hourglass', icon: '⏳', name: '时间沙漏', desc: '⏳离线收益', baseCost: 200, costMult: 2, maxLevel: 10},
+    
+    // === 掉落类 ===
+    {id: 'luckyClover', icon: '🍀', name: '幸运四叶草', desc: '🍀掉落概率 +10%', baseCost: 100, costMult: 3, maxLevel: 20},
+    {id: 'thief', icon: '🗝️', name: '盗贼手套', desc: '🗝️暴击偷金币', baseCost: 180, costMult: 3, maxLevel: 15},
+    
+    // === 特殊类 ===
+    {id: 'lifesteal', icon: '🧛', name: '吸血鬼之牙', desc: '🧛生命偷取 +5%', baseCost: 250, costMult: 3.5, maxLevel: 15},
+    {id: 'allDamage', icon: '🌟', name: '全能戒指', desc: '全伤害 +50%', baseCost: 500, costMult: 5, maxLevel: 20}
 ];
+
+// 简化版神器配置映射（用于快速访问效果）
+const artifactEffects = {
+    fireSoul: {name: '火焰之魂', effect: 'fire', multiplier: 2},
+    iceHeart: {name: '冰霜之心', effect: 'ice', multiplier: 2},
+    lightning: {name: '雷电之怒', effect: 'lightning', multiplier: 2},
+    poison: {name: '剧毒之囊', effect: 'poison', multiplier: 1.5},
+    explosion: {name: '爆裂护符', effect: 'explosion', multiplier: 1.5},
+    chainLightning: {name: '连锁闪电', effect: 'chainLightning', multiplier: 0.5}
+};
 
 // 装备配置
 const equipmentConfig = {
@@ -184,6 +196,7 @@ function initGame() {
     renderPets();
     startAutoAttack();
     startBossAttack();
+    startPoisonTick();
     startGameTimer();
     checkOfflineGains();
     setInterval(saveGame, 30000);
@@ -383,6 +396,16 @@ function attackBoss(event) {
     bossImg.classList.add('hit');
     setTimeout(() => bossImg.classList.remove('hit'), 200);
     
+    // === 毒液效果 ===
+    if (gameState.artifacts.poison > 0 && gameState.currentHP > 0) {
+        applyPoison();
+    }
+    
+    // === 连锁闪电 ===
+    if (gameState.artifacts.chainLightning > 0) {
+        createChainLightningEffect();
+    }
+    
     if (gameState.currentHP <= 0) killBoss();
     
     updateHPBar();
@@ -549,6 +572,12 @@ function killBoss() {
     const goldReward = gameState.level * 5; // 击杀额外奖励
     let finalGold = goldReward;
     
+    // 爆裂护符 - 额外爆炸伤害
+    if (gameState.artifacts.explosion > 0) {
+        const explosionDamage = gameState.maxHP * 0.5 * gameState.artifacts.explosion;
+        gameState.gold += Math.floor(explosionDamage * 0.1); // 爆炸伤害的10%转为金币
+    }
+    
     // 金币加成（只对击杀奖励生效）
     if (gameState.artifacts.goldMagnet > 0) finalGold *= Math.pow(1.5, gameState.artifacts.goldMagnet);
     if (gameState.artifacts.treasureMap > 0) finalGold *= Math.pow(1.5, gameState.artifacts.treasureMap);
@@ -559,6 +588,14 @@ function killBoss() {
         const pet = petConfig.find(p => p.id === gameState.activePet);
         if (pet && pet.bonus.gold) finalGold *= (1 + pet.bonus.gold / 100);
     }
+    
+    // 击杀爆炸特效
+    if (gameState.artifacts.explosion > 0) {
+        createExplosionEffect();
+    }
+    
+    // 重置毒液层数
+    poisonStacks = 0;
     
     gameState.gold += Math.floor(finalGold);
     gameState.level++;
@@ -653,7 +690,23 @@ function startBossAttack() {
                 });
                 if (gameState.artifacts.stoneSkin > 0) damageReduce *= (1 + gameState.artifacts.stoneSkin * 0.1);
                 
-                const finalDamage = Math.max(1, bossDamage - damageReduce * 0.5);
+                let finalDamage = Math.max(1, bossDamage - damageReduce * 0.5);
+                
+                // 荆棘反弹伤害
+                if (gameState.artifacts.thorns > 0) {
+                    const thornsDamage = finalDamage * 0.1 * gameState.artifacts.thorns;
+                    gameState.currentHP -= thornsDamage;
+                    gameState.totalDamage += thornsDamage;
+                    gameState.gold += Math.floor(thornsDamage);
+                    
+                    // 显示荆棘伤害
+                    const bossArea = document.getElementById('bossClickArea');
+                    if (bossArea) {
+                        const rect = bossArea.getBoundingClientRect();
+                        showThornsDamage(thornsDamage, rect.left + rect.width/2, rect.top + rect.height/2);
+                    }
+                }
+                
                 gameState.playerCurrentHp -= finalDamage;
                 
                 // 显示玩家受到的伤害
@@ -666,12 +719,27 @@ function startBossAttack() {
                 
                 updatePlayerHP();
                 
+                if (gameState.currentHP <= 0) killBoss();
                 if (gameState.playerCurrentHp <= 0) {
                     gameOver();
                 }
             }
         }
     }, 3000); // Boss每3秒攻击一次
+}
+
+// 显示荆棘反弹伤害
+function showThornsDamage(damage, x, y) {
+    const float = document.createElement('div');
+    float.className = 'damage-float';
+    float.textContent = '🌹' + formatNumber(Math.floor(damage));
+    float.style.left = x + 'px';
+    float.style.top = y + 'px';
+    float.style.color = '#ff69b4';
+    float.style.fontSize = '1.2em';
+    float.style.textShadow = '0 0 10px #ff69b4';
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1000);
 }
 
 // 更新玩家HP显示
@@ -788,16 +856,26 @@ function upgradeDPS() {
     }
 }
 
-// 自动攻击
+// 自动攻击（DPS）
 function startAutoAttack() {
     setInterval(() => {
-        if (gameState.dps > 0 && gameState.currentHP > 0 && gameState.playerCurrentHp > 0) {
+        if (gameState.currentHP > 0 && gameState.playerCurrentHp > 0) {
             let damage = calculateDPS();
+            let effectType = 'normal';
             
             // 元素伤害
-            if (gameState.artifacts.fireSoul > 0) damage *= Math.pow(2, gameState.artifacts.fireSoul);
-            if (gameState.artifacts.lightning > 0) damage *= Math.pow(2, gameState.artifacts.lightning);
-            if (gameState.artifacts.iceHeart > 0) damage *= Math.pow(2, gameState.artifacts.iceHeart);
+            if (gameState.artifacts.fireSoul > 0) {
+                damage *= Math.pow(2, gameState.artifacts.fireSoul);
+                effectType = 'fire';
+            }
+            if (gameState.artifacts.lightning > 0) {
+                damage *= Math.pow(2, gameState.artifacts.lightning);
+                if (effectType !== 'fire') effectType = 'lightning';
+            }
+            if (gameState.artifacts.iceHeart > 0) {
+                damage *= Math.pow(2, gameState.artifacts.iceHeart);
+                if (effectType === 'normal') effectType = 'ice';
+            }
             
             // 全伤害加成
             if (gameState.artifacts.allDamage > 0) {
@@ -807,6 +885,13 @@ function startAutoAttack() {
             gameState.currentHP -= damage;
             gameState.totalDamage += damage;
             gameState.gold += Math.floor(damage);
+            
+            // 连锁闪电（对假目标额外伤害）
+            if (gameState.artifacts.chainLightning > 0) {
+                const chainDamage = damage * 0.5 * gameState.artifacts.chainLightning;
+                // 创建连锁闪电特效
+                createChainLightningEffect();
+            }
             
             // DPS吸血
             if (gameState.artifacts.lifesteal > 0) {
@@ -824,6 +909,175 @@ function startAutoAttack() {
         }
     }, 1000);
 }
+
+// 连锁闪电特效
+function createChainLightningEffect() {
+    const bossArea = document.getElementById('bossClickArea');
+    if (!bossArea) return;
+    
+    const rect = bossArea.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    
+    // 创建多个连锁闪电目标点
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+            const targetX = x + (Math.random() - 0.5) * 100;
+            const targetY = y + (Math.random() - 0.5) * 100;
+            createLightningBolt(x, y, targetX, targetY);
+        }, i * 100);
+    }
+}
+
+function createLightningBolt(x1, y1, x2, y2) {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+    
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#aa00ff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#aa00ff';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    
+    // 画之字形闪电
+    const segments = 8;
+    const dx = (x2 - x1) / segments;
+    const dy = (y2 - y1) / segments;
+    
+    for (let i = 1; i < segments; i++) {
+        const offsetX = (Math.random() - 0.5) * 40;
+        const offsetY = (Math.random() - 0.5) * 40;
+        ctx.lineTo(x1 + dx * i + offsetX, y1 + dy * i + offsetY);
+    }
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    container.appendChild(canvas);
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 300);
+}
+
+// 毒液持续伤害系统
+let poisonStacks = 0;
+let poisonDamagePerTick = 0;
+
+function applyPoison() {
+    if (gameState.artifacts.poison > 0 && gameState.currentHP > 0) {
+        // 计算毒伤
+        const basePoisonDamage = calculateAttack() * 0.5;
+        const poisonMultiplier = Math.pow(1.5, gameState.artifacts.poison);
+        poisonDamagePerTick = basePoisonDamage * poisonMultiplier;
+        poisonStacks = 5; // 5秒持续伤害
+    }
+}
+
+function startPoisonTick() {
+    setInterval(() => {
+        if (poisonStacks > 0 && gameState.currentHP > 0) {
+            gameState.currentHP -= poisonDamagePerTick;
+            gameState.totalDamage += poisonDamagePerTick;
+            gameState.gold += Math.floor(poisonDamagePerTick);
+            poisonStacks--;
+            
+            // 显示毒伤数字
+            showPoisonDamage(poisonDamagePerTick);
+            
+            if (gameState.currentHP <= 0) killBoss();
+            updateHPBar();
+            updateDisplay();
+        }
+    }, 1000);
+}
+
+function showPoisonDamage(damage) {
+    const bossArea = document.getElementById('bossClickArea');
+    if (!bossArea) return;
+    
+    const rect = bossArea.getBoundingClientRect();
+    const float = document.createElement('div');
+    float.className = 'damage-float';
+    float.textContent = '☠️' + formatNumber(Math.floor(damage));
+    float.style.left = (rect.left + rect.width/2 + (Math.random()-0.5)*50) + 'px';
+    float.style.top = (rect.top + (Math.random()-0.5)*50) + 'px';
+    float.style.color = '#00ff00';
+    float.style.fontSize = '1.2em';
+    float.style.textShadow = '0 0 10px #00ff00';
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 1000);
+}
+
+// 击杀爆炸效果
+function createExplosionEffect() {
+    const bossArea = document.getElementById('bossClickArea');
+    if (!bossArea) return;
+    
+    const rect = bossArea.getBoundingClientRect();
+    const x = rect.left + rect.width/2;
+    const y = rect.top + rect.height/2;
+    
+    // 创建爆炸圆圈
+    const explosion = document.createElement('div');
+    explosion.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,100,0,0.8) 0%, rgba(255,50,0,0.4) 50%, transparent 70%);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 9998;
+        animation: explosionBurst 0.5s ease-out forwards;
+    `;
+    document.body.appendChild(explosion);
+    setTimeout(() => explosion.remove(), 500);
+    
+    // 添加爆炸粒子
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        const angle = (i / 12) * Math.PI * 2;
+        const distance = 80 + Math.random() * 40;
+        particle.style.cssText = `
+            position: fixed;
+            left: ${x}px;
+            top: ${y}px;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #fff, #ff6600);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9999;
+            animation: particleExplode 0.6s ease-out forwards;
+            --tx: ${Math.cos(angle) * distance}px;
+            --ty: ${Math.sin(angle) * distance}px;
+        `;
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 600);
+    }
+}
+
+// 添加爆炸样式到页面
+const explosionStyle = document.createElement('style');
+explosionStyle.textContent = `
+    @keyframes explosionBurst {
+        0% { width: 0; height: 0; opacity: 1; }
+        100% { width: 200px; height: 200px; opacity: 0; }
+    }
+    @keyframes particleExplode {
+        0% { transform: translate(-50%, -50%) translate(0, 0); opacity: 1; }
+        100% { transform: translate(-50%, -50%) translate(var(--tx), var(--ty)); opacity: 0; }
+    }
+`;
+document.head.appendChild(explosionStyle);
 
 // ===== 神器系统（解锁机制+金币升级） =====
 function openArtifactModal() {

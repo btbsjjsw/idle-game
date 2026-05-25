@@ -473,10 +473,36 @@ function attackBoss(event) {
     // 每点伤害给1金币
     gameState.gold += Math.floor(totalDamageDealt * goldMultiplier);
     
-    // 应用伤害
+    // 应用伤害（带精英Boss防御/闪避/反弹）
+    const eliteAbils = gameState.eliteAbilities || [];
     for (let i = 0; i < hits; i++) {
-        gameState.currentHP -= damage;
-        gameState.totalDamage += damage;
+        // 精英幻影闪避：30%概率闪避
+        if (eliteAbils.some(a => a.id === 'eliteDodge') && Math.random() < 0.3) {
+            // 闪避效果
+            const bossArea = document.getElementById('bossClickArea');
+            if (bossArea) {
+                const rect = bossArea.getBoundingClientRect();
+                showDamageNumber(0, rect.left + rect.width / 2, rect.top + rect.height / 2, 'dodge');
+            }
+            continue;
+        }
+        // 精英钢铁护甲：50%伤害减免
+        let eliteReduced = damage;
+        if (eliteAbils.some(a => a.id === 'eliteDefense')) {
+            eliteReduced = Math.floor(damage * 0.5);
+        }
+        // 精英神圣护盾：额外30%减免
+        if (eliteAbils.some(a => a.id === 'eliteShield')) {
+            eliteReduced = Math.floor(eliteReduced * 0.7);
+        }
+        gameState.currentHP -= eliteReduced;
+        gameState.totalDamage += eliteReduced;
+        // 精英荆棘反弹：20%伤害反弹给玩家
+        if (eliteAbils.some(a => a.id === 'eliteThorns')) {
+            const reflect = Math.floor(eliteReduced * 0.2);
+            gameState.playerCurrentHp = Math.max(0, gameState.playerCurrentHp - reflect);
+            updatePlayerHP();
+        }
         if (i === 0) {
             // 使用bossClickArea获取位置（更可靠）
             const bossArea = document.getElementById('bossClickArea');
@@ -650,6 +676,18 @@ function showDamageNumber(damage, x, y, effectType) {
             dmgFloat.style.fontSize = Math.min(5, scaleFont + 0.6) + 'em';
             dmgFloat.style.textShadow = '0 0 12px #ff00ff, 0 0 24px #ff0000';
             dmgFloat.textContent = '😡狂暴! ' + dmgFloat.textContent;
+            break;
+        case 'dodge':
+            dmgFloat.style.color = '#88ccff';
+            dmgFloat.style.fontSize = '1.5em';
+            dmgFloat.style.textShadow = '0 0 8px #88ccff';
+            dmgFloat.textContent = '💨闪避!';
+            break;
+        case 'reflect':
+            dmgFloat.style.color = '#ff69b4';
+            dmgFloat.style.fontSize = scaleFont + 'em';
+            dmgFloat.style.textShadow = '0 0 8px #ff69b4';
+            dmgFloat.textContent = '🌹反弹 ' + dmgFloat.textContent;
             break;
         default:
             dmgFloat.style.color = '#ffffff';
@@ -903,61 +941,97 @@ function showDropNotification(item) {
 function startBossAttack() {
     safeInterval('bossAttack', () => {
         if (gameState.playerCurrentHp > 0 && gameState.level > 0) {
-            // Boss攻击玩家（Boss总是存在的，不依赖currentHP > 0）
             const eliteMult = gameState.eliteDmgMult || 1;
             const bossDamage = Math.floor((5 + gameState.level * 2) * eliteMult);
             
-            // 闪避判定
-            let dodgeChance = 0;
-            Object.values(gameState.equipment).forEach(item => {
-                if (item && item.stats.dodge) dodgeChance += item.stats.dodge;
-            });
+            // ===== 精英Boss能力效果 =====
+            const abilities = gameState.eliteAbilities || [];
             
-            if (Math.random() * 100 > dodgeChance) {
-                // 计算伤害减免
-                let damageReduce = 0;
-                // 防御等级减免（每级+2防）
-                damageReduce += gameState.defenseLevel * 2;
+            // 双重攻击：攻击两次
+            const attackCount = abilities.some(a => a.id === 'eliteDouble') ? 2 : 1;
+            
+            for (let atkIdx = 0; atkIdx < attackCount; atkIdx++) {
+                let finalDamage = bossDamage;
+                
+                // 烈焰吐息：额外火焰伤害
+                if (abilities.some(a => a.id === 'eliteFire')) {
+                    finalDamage = Math.floor(finalDamage * 1.3);
+                }
+                // 雷霆之力：额外伤害
+                if (abilities.some(a => a.id === 'eliteLightning')) {
+                    finalDamage = Math.floor(finalDamage * 1.5);
+                }
+                // 剧毒之触：额外毒伤
+                let isPoison = false;
+                if (abilities.some(a => a.id === 'elitePoison')) {
+                    finalDamage = Math.floor(finalDamage * 1.1);
+                    isPoison = true;
+                }
+                
+                // 闪避判定
+                let dodgeChance = 0;
                 Object.values(gameState.equipment).forEach(item => {
-                    if (item && item.stats.defense) damageReduce += item.stats.defense;
+                    if (item && item.stats.dodge) dodgeChance += item.stats.dodge;
                 });
-                if (gameState.artifacts.stoneSkin > 0) damageReduce *= (1 + gameState.artifacts.stoneSkin * 0.1);
                 
-                let finalDamage = Math.max(1, bossDamage - damageReduce * 0.5);
-                
-                // 荆棘反弹伤害
-                if (gameState.artifacts.thorns > 0) {
-                    const thornsDamage = finalDamage * 0.1 * gameState.artifacts.thorns;
-                    gameState.currentHP -= thornsDamage;
-                    gameState.totalDamage += thornsDamage;
-                    gameState.gold += Math.floor(thornsDamage);
+                if (Math.random() * 100 > dodgeChance) {
+                    // 计算伤害减免
+                    let damageReduce = 0;
+                    damageReduce += gameState.defenseLevel * 2;
+                    Object.values(gameState.equipment).forEach(item => {
+                        if (item && item.stats.defense) damageReduce += item.stats.defense;
+                    });
+                    if (gameState.artifacts.stoneSkin > 0) damageReduce *= (1 + gameState.artifacts.stoneSkin * 0.1);
                     
-                    // 显示荆棘伤害
-                    const bossArea = document.getElementById('bossClickArea');
-                    if (bossArea) {
-                        const rect = bossArea.getBoundingClientRect();
-                        showThornsDamage(thornsDamage, rect.left + rect.width/2, rect.top + rect.height/2);
+                    finalDamage = Math.max(1, finalDamage - damageReduce * 0.5);
+                    
+                    // 荆棘反弹伤害（玩家对Boss）
+                    if (gameState.artifacts.thorns > 0) {
+                        const thornsDamage = finalDamage * 0.1 * gameState.artifacts.thorns;
+                        gameState.currentHP -= thornsDamage;
+                        gameState.totalDamage += thornsDamage;
+                        gameState.gold += Math.floor(thornsDamage);
+                        const bossArea = document.getElementById('bossClickArea');
+                        if (bossArea) {
+                            const rect = bossArea.getBoundingClientRect();
+                            showThornsDamage(thornsDamage, rect.left + rect.width/2, rect.top + rect.height/2);
+                        }
                     }
-                }
-                
-                gameState.playerCurrentHp -= finalDamage;
-                
-                // 显示玩家受到的伤害
-                const playerHpWrap = document.querySelector('.player-hp-wrap');
-                if (playerHpWrap) {
-                    const rect = playerHpWrap.getBoundingClientRect();
-                    showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'player');
-                }
-                
-                updatePlayerHP();
-                
-                // 荆棘反弹不会击杀Boss（伤害太小），跳过
-                if (gameState.playerCurrentHp <= 0) {
-                    gameOver();
+                    
+                    gameState.playerCurrentHp -= finalDamage;
+                    
+                    // 显示玩家受到的伤害（带效果类型）
+                    const playerHpWrap = document.querySelector('.player-hp-wrap');
+                    if (playerHpWrap) {
+                        const rect = playerHpWrap.getBoundingClientRect();
+                        if (isPoison) {
+                            showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'poison');
+                        } else if (abilities.some(a => a.id === 'eliteFire')) {
+                            showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'fire');
+                        } else if (abilities.some(a => a.id === 'eliteLightning')) {
+                            showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'lightning');
+                        } else {
+                            showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'player');
+                        }
+                    }
+                    
+                    // 玩家HP条红色闪烁
+                    const hpFill = document.getElementById('playerHpFill');
+                    if (hpFill) {
+                        hpFill.style.filter = 'brightness(1.8)';
+                        setTimeout(() => { if (hpFill) hpFill.style.filter = ''; }, 200);
+                    }
+                    
+                    updatePlayerHP();
+                    
+                    if (gameState.playerCurrentHp <= 0) {
+                        gameOver();
+                        break;
+                    }
                 }
             }
         }
-    }, 3000); // Boss每3秒攻击一次
+    }, 3000);
 }
 
 // 显示荆棘反弹伤害
@@ -1537,10 +1611,25 @@ function startAutoAttack() {
         // === 总伤害 ===
         let totalDamage = baseDamage * hits + chainDamage;
         
-        // === 边界检查 ===
+        // === 边界检查+精英Boss能力 ===
         if (gameState.currentHP > 0) {
-            gameState.currentHP -= totalDamage;
-            gameState.totalDamage += totalDamage;
+            const eliteAbils = gameState.eliteAbilities || [];
+            // 精英幻影闪避
+            if (!eliteAbils.some(a => a.id === 'eliteDodge') || Math.random() >= 0.3) {
+                let actualDmg = totalDamage;
+                // 精英钢铁护甲：50%伤害减免
+                if (eliteAbils.some(a => a.id === 'eliteDefense')) actualDmg = Math.floor(actualDmg * 0.5);
+                // 精英神圣护盾：额外30%减免
+                if (eliteAbils.some(a => a.id === 'eliteShield')) actualDmg = Math.floor(actualDmg * 0.7);
+                gameState.currentHP -= actualDmg;
+                gameState.totalDamage += actualDmg;
+                // 精英荆棘反弹
+                if (eliteAbils.some(a => a.id === 'eliteThorns')) {
+                    const reflect = Math.floor(actualDmg * 0.2);
+                    gameState.playerCurrentHp = Math.max(0, gameState.playerCurrentHp - reflect);
+                    updatePlayerHP();
+                }
+            }
         }
         
         // === 金币 ===
@@ -1676,6 +1765,20 @@ function startPoisonTick() {
             updateHPBar();
             updateDisplay();
         }
+        
+        // 精英Boss剧毒之触：玩家持续掉血
+        if (gameState.playerCurrentHp > 0 && gameState.eliteAbilities && gameState.eliteAbilities.some(a => a.id === 'elitePoison')) {
+            const elitePoisonDmg = Math.floor(gameState.playerMaxHp * 0.02); // 每秒2%最大血量
+            gameState.playerCurrentHp = Math.max(0, gameState.playerCurrentHp - elitePoisonDmg);
+            // 显示中毒伤害
+            const playerHpWrap = document.querySelector('.player-hp-wrap');
+            if (playerHpWrap) {
+                const rect = playerHpWrap.getBoundingClientRect();
+                showDamageNumber(elitePoisonDmg, rect.left + rect.width / 2, rect.top + 20, 'poison');
+            }
+            updatePlayerHP();
+            if (gameState.playerCurrentHp <= 0) gameOver();
+        }
     }, 1000);
 }
 
@@ -1711,6 +1814,15 @@ function startRegen() {
             updatePlayerHP();
         }
     }, 1000);
+    
+    // 精英Boss自我修复：每2秒回复5%HP
+    safeInterval('eliteBossRegen', () => {
+        if (gameState.level > 0 && gameState.currentHP > 0 && gameState.eliteAbilities && gameState.eliteAbilities.some(a => a.id === 'eliteRegen')) {
+            const regenAmount = Math.floor(gameState.maxHP * 0.05);
+            gameState.currentHP = Math.min(gameState.maxHP, gameState.currentHP + regenAmount);
+            updateHPBar();
+        }
+    }, 2000);
 }
 
 // 击杀爆炸效果
@@ -1793,8 +1905,8 @@ function closeArtifactModal() {
 // 计算下一个神器解锁价格
 function getNextUnlockPrice() {
     const unlockedCount = artifactConfig.filter(a => gameState.artifacts[a.id] !== undefined).length;
-    // 价格 = 100 * 1.5^已解锁数量
-    return Math.floor(100 * Math.pow(1.5, unlockedCount));
+    // 价格 = 1 * 1.5^已解锁数量（基础价格从1起）
+    return Math.floor(1 * Math.pow(1.5, unlockedCount));
 }
 
 function renderArtifacts() {

@@ -472,9 +472,18 @@ function attackBoss(event) {
         gameState.currentHP -= damage;
         gameState.totalDamage += damage;
         if (i === 0) {
-            const bossImage = document.getElementById('bossImage');
-            const bossRect = bossImage.getBoundingClientRect();
-            showDamageNumber(totalDamageDealt, bossRect.left + bossRect.width/2, bossRect.top + bossRect.height/2, effectType);
+            // 使用bossClickArea获取位置（更可靠）
+            const bossArea = document.getElementById('bossClickArea');
+            let bossX = window.innerWidth / 2;
+            let bossY = window.innerHeight / 3;
+            
+            if (bossArea) {
+                const rect = bossArea.getBoundingClientRect();
+                bossX = rect.left + rect.width / 2;
+                bossY = rect.top + rect.height / 2;
+            }
+            
+            showDamageNumber(totalDamageDealt, bossX, bossY, effectType);
         }
     }
     
@@ -1248,16 +1257,21 @@ function startAutoAttack() {
         
         // === 记录实时DPS + 显示伤害数字 ===
         dpsTracker.addDamage(totalDamage);
-        // 使用boss图片中心位置，而不是点击区域
-        const bossImage = document.getElementById('bossImage');
-        if (bossImage) {
-            const rect = bossImage.getBoundingClientRect();
-            const bx = rect.left + rect.width / 2;
-            const by = rect.top + rect.height / 2;
-            if (isCrit) {
-                showDamageNumber(totalDamage, bx, by, 'crit');
-            } else if (isBerserk) {
-                showDamageNumber(totalDamage, bx, by, 'berserk');
+        // 使用bossClickArea获取位置（更可靠）
+        const bossArea = document.getElementById('bossClickArea');
+        let bx = window.innerWidth / 2;
+        let by = window.innerHeight / 3;
+        
+        if (bossArea) {
+            const rect = bossArea.getBoundingClientRect();
+            bx = rect.left + rect.width / 2;
+            by = rect.top + rect.height / 2;
+        }
+        
+        if (isCrit) {
+            showDamageNumber(totalDamage, bx, by, 'crit');
+        } else if (isBerserk) {
+            showDamageNumber(totalDamage, bx, by, 'berserk');
             } else if (effectType !== 'normal') {
                 showDamageNumber(totalDamage, bx, by, effectType);
             }
@@ -2197,8 +2211,8 @@ function updateDisplay() {
     document.getElementById('playerLevel').textContent = gameState.clickLevel;
     document.getElementById('clickCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.clickLevel, 1.5)));
     document.getElementById('dpsCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5)));
-    document.getElementById('clickLevel').textContent = gameState.clickLevel;
-    document.getElementById('dpsLevel').textContent = gameState.dpsLevel;
+    document.getElementById('clickLevel').textContent = gameState.clickDamage;
+    document.getElementById('dpsLevel').textContent = gameState.dps;
     document.getElementById('rebirthBtn').disabled = gameState.maxLevel < 10;
     
     // 重生点显示

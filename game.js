@@ -1796,8 +1796,12 @@ function showItemDetail(item, index) {
             goldBonus: '金币加成'
         };
         const name = statNames[stat] || stat;
-        const value = stat === 'crit' || stat === 'critDamage' ? `${item.stats[stat]}%` :
-              stat.includes('Bonus') || (stat.includes('Damage') && stat !== 'critDamage') || stat.includes('Reduce') || stat.includes('Resist') ? `${item.stats[stat] * 100}%` : item.stats[stat];
+        let value = item.stats[stat];
+        if (stat === 'crit' || stat === 'critDamage') {
+            value = value + '%';
+        } else if (stat.includes('Bonus') || stat.includes('Damage') || stat.includes('Reduce') || stat.includes('Resist')) {
+            value = (typeof value === 'number' ? value * 100 : value) + '%';
+        }
         statsHTML += `<div>${name}: +${value}</div>`;
     });
     

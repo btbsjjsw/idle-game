@@ -20,6 +20,7 @@ let gameState = {
     playerCurrentHp: 500,
     regenLevel: 0,      // 回血等级
     hpLevel: 0,         // 血量等级
+    defenseLevel: 0,    // 防御等级（减免Boss伤害）
     playerExp: 0,       // 当前经验
     playerExpNeeded: 100, // 升级所需经验
     playerLevel: 1,     // 玩家等级
@@ -312,31 +313,26 @@ function checkOfflineGains() {
 
 // 计算总DPS
 function calculateDPS() {
-    let dps = gameState.dps;
+    // 自动点击DPS = 单次伤害 × 每秒攻击次数
+    let baseAttack = calculateAttack();
+    let attacksPerSec = 1 + gameState.dpsLevel * 0.3;
+    let dps = baseAttack * attacksPerSec;
     
-    // 神器加成
-    if (gameState.artifacts.powerBook > 0) dps *= Math.pow(1.5, gameState.artifacts.powerBook);
-    if (gameState.artifacts.sharpness > 0) dps *= Math.pow(1.25, gameState.artifacts.sharpness);
-    if (gameState.artifacts.fireSoul > 0) dps *= Math.pow(2, gameState.artifacts.fireSoul);
-    if (gameState.artifacts.lightning > 0) dps *= Math.pow(2, gameState.artifacts.lightning);
-    if (gameState.artifacts.iceHeart > 0) dps *= Math.pow(2, gameState.artifacts.iceHeart);
+    // 神器加成（部分已经在calculateAttack里了，这里只加专属DPS加成）
+    if (gameState.artifacts.multiHit > 0) dps *= Math.pow(1.3, gameState.artifacts.multiHit);
+    if (gameState.artifacts.attackSpeed > 0) attacksPerSec *= Math.pow(1.2, gameState.artifacts.attackSpeed);
+    // 重新计算（attackSpeed影响攻击速度）
+    attacksPerSec = 1 + gameState.dpsLevel * 0.3;
+    if (gameState.artifacts.attackSpeed > 0) attacksPerSec *= Math.pow(1.2, gameState.artifacts.attackSpeed);
+    dps = baseAttack * attacksPerSec;
+    
     if (gameState.artifacts.allDamage > 0) dps *= (1 + gameState.artifacts.allDamage * 0.5);
-    if (gameState.artifacts.fatalBlow > 0) dps *= Math.pow(1.5, gameState.artifacts.fatalBlow);
-    // 注意：Berserk 只在 <30%HP 时触发，不计入面板 DPS（避免虚高）
-    // 注意：critEye 暴击率不计入 DPS（由 calculateCrit() 单独处理）
-    
-    // 宠物加成
-    if (gameState.activePet && petConfig.find(p => p.id === gameState.activePet)) {
-        const pet = petConfig.find(p => p.id === gameState.activePet);
-        if (pet.bonus.dps) dps += pet.bonus.dps * (gameState.pets[gameState.activePet] || 1);
+    if (gameState.artifacts.fatalBlow > 0) {
+        const critChance = calculateCrit() / 100;
+        dps *= (1 + critChance * (Math.pow(1.5, gameState.artifacts.fatalBlow) - 1));
     }
     
-    // 装备加成
-    Object.values(gameState.equipment).forEach(item => {
-        if (item && item.stats.attack) dps += item.stats.attack;
-    });
-    
-    return dps;
+    return Math.floor(dps);
 }
 
 // 计算攻击力
@@ -789,11 +785,22 @@ function killBoss() {
     const expReward = 10 + gameState.level * 2;
     addPlayerExp(expReward);
     
-    // 装备掉落
-    dropEquipment();
+    // 装备掉落（精英Boss必定掉落，且掉落品质更好）
+    const wasElite = gameState.eliteAbilities && gameState.eliteAbilities.length > 0;
+    const forcedDrop = wasElite;
+    const qualityBoost = wasElite ? gameState.eliteAbilities.length : 0;
+    dropEquipment(forcedDrop, qualityBoost);
+    
+    // 精英Boss奖励神器点
+    if (wasElite) {
+        const apReward = Math.floor(10 + gameState.eliteAbilities.length * 3);
+        gameState.artifactPoints = (gameState.artifactPoints || 0) + apReward;
+        showNotification(`👑 精英Boss击杀! +${formatNumber(Math.floor(finalGold))} 💰 +${expReward} 经验 +${apReward} 🔮`);
+    } else {
+        showNotification(`击杀Boss! +${formatNumber(Math.floor(finalGold))} 💰 +${expReward} 经验`);
+    }
     
     updateBoss();
-    showNotification(`击杀Boss! +${formatNumber(Math.floor(finalGold))} 💰 +${expReward} 经验`);
     updateDisplay();
 }
 
@@ -817,20 +824,27 @@ function checkPlayerLevelUp() {
 }
 
 // 装备掉落系统
-function dropEquipment() {
-    const dropChance = 0.15 + (gameState.artifacts.luckyClover > 0 ? gameState.artifacts.luckyClover * 0.1 : 0);
+// forcedDrop: 强制掉落, qualityBoost: 品质提升(0-10, 越高越好)
+function dropEquipment(forcedDrop = false, qualityBoost = 0) {
+    const baseDropChance = 0.15 + (gameState.artifacts.luckyClover > 0 ? gameState.artifacts.luckyClover * 0.1 : 0);
+    const dropChance = forcedDrop ? 1.0 : baseDropChance;
     
     if (Math.random() < dropChance) {
         const slotTypes = Object.keys(equipmentConfig);
         const slot = slotTypes[Math.floor(Math.random() * slotTypes.length)];
         
         // 根据关卡等级决定掉落品质（每个档位独立随机数，正确概率）
-        let qualityIndex = 0; // 0=common, 1=rare, 2=epic, 3=legendary, 4=mythic
-        if (gameState.level >= 50 && Math.random() < 0.05) qualityIndex = 4; // mythic 5%
-        else if (gameState.level >= 30 && Math.random() < 0.15) qualityIndex = 3; // legendary 15%
-        else if (gameState.level >= 15 && Math.random() < 0.30) qualityIndex = 2; // epic 30%
-        else if (gameState.level >= 5 && Math.random() < 0.50) qualityIndex = 1; // rare 50%
-        else qualityIndex = 0; // common (fallback)
+        let qualityIndex = 0;
+        if (gameState.level >= 50 && Math.random() < 0.05 + qualityBoost * 0.02) qualityIndex = 4; // mythic
+        else if (gameState.level >= 30 && Math.random() < 0.15 + qualityBoost * 0.03) qualityIndex = 3; // legendary
+        else if (gameState.level >= 15 && Math.random() < 0.30 + qualityBoost * 0.03) qualityIndex = 2; // epic
+        else if (gameState.level >= 5 && Math.random() < 0.50 + qualityBoost * 0.02) qualityIndex = 1; // rare
+        else qualityIndex = 0; // common
+        
+        // 品质加成：至少提升到对应档位
+        if (qualityBoost >= 8) qualityIndex = Math.max(qualityIndex, 3); // 8+能力→至少传说
+        else if (qualityBoost >= 6) qualityIndex = Math.max(qualityIndex, 2); // 6+能力→至少史诗
+        else if (qualityBoost >= 4) qualityIndex = Math.max(qualityIndex, 1); // 4+能力→至少稀有
         
         const qualityMap = ['common', 'rare', 'epic', 'legendary', 'mythic'];
         const targetQuality = qualityMap[qualityIndex];
@@ -890,7 +904,8 @@ function startBossAttack() {
     safeInterval('bossAttack', () => {
         if (gameState.playerCurrentHp > 0 && gameState.level > 0) {
             // Boss攻击玩家（Boss总是存在的，不依赖currentHP > 0）
-            const bossDamage = Math.floor(5 + gameState.level * 2);
+            const eliteMult = gameState.eliteDmgMult || 1;
+            const bossDamage = Math.floor((5 + gameState.level * 2) * eliteMult);
             
             // 闪避判定
             let dodgeChance = 0;
@@ -901,6 +916,8 @@ function startBossAttack() {
             if (Math.random() * 100 > dodgeChance) {
                 // 计算伤害减免
                 let damageReduce = 0;
+                // 防御等级减免（每级+2防）
+                damageReduce += gameState.defenseLevel * 2;
                 Object.values(gameState.equipment).forEach(item => {
                     if (item && item.stats.defense) damageReduce += item.stats.defense;
                 });
@@ -980,6 +997,13 @@ function updatePlayerHP() {
     document.getElementById('playerHpFill').style.width = hpPercent + '%';
     document.getElementById('playerCurrentHp').textContent = Math.floor(gameState.playerCurrentHp);
     document.getElementById('playerMaxHp').textContent = gameState.playerMaxHp;
+    
+    // 显示每秒回血量
+    const regenDisplay = document.getElementById('playerRegenDisplay');
+    if (regenDisplay) {
+        const regenAmount = gameState.regenLevel * 5;
+        regenDisplay.textContent = regenAmount > 0 ? ` +${regenAmount}/s` : '';
+    }
 }
 
 // 游戏结束
@@ -1036,10 +1060,13 @@ function resetAllGameData() {
         dpsLevel: 0,
         regenLevel: 0,
         hpLevel: 0,
+        defenseLevel: 0,
         playerExp: 0,
         playerExpNeeded: 100,
         playerLevel: 1,
         artifactPoints: 0,
+        eliteAbilities: [],
+        eliteDmgMult: 1,
         artifacts: {},
         equipment: {},
         inventory: [],
@@ -1068,10 +1095,47 @@ function restartGame() {
 }
 
 // 更新Boss（每个Boss都有不同的emoji）
+// 精英Boss能力池
+const eliteAbilities = [
+    { id: 'eliteDefense', name: '钢铁护甲', icon: '🛡️', effect: '减免50%伤害', hpMult: 2 },
+    { id: 'eliteRegen', name: '自我修复', icon: '💚', effect: '每秒回复5%HP', hpMult: 1.5 },
+    { id: 'eliteFire', name: '烈焰吐息', icon: '🔥', effect: '攻击额外30%火焰伤害', dmgMult: 1.3 },
+    { id: 'eliteIce', name: '冰霜护体', icon: '❄️', effect: '攻击附带减速', dmgMult: 1.2, hpMult: 1.5 },
+    { id: 'eliteLightning', name: '雷霆之力', icon: '⚡', effect: '额外50%伤害', dmgMult: 1.5 },
+    { id: 'elitePoison', name: '剧毒之触', icon: '☠️', effect: '攻击附带持续毒伤', dmgMult: 1.1 },
+    { id: 'eliteThorns', name: '荆棘反弹', icon: '🌹', effect: '反弹20%伤害', hpMult: 1.3 },
+    { id: 'eliteDodge', name: '幻影闪避', icon: '💨', effect: '30%概率闪避攻击', hpMult: 1.1 },
+    { id: 'eliteDouble', name: '双重攻击', icon: '👊', effect: '每回合攻击2次', dmgMult: 1.8 },
+    { id: 'eliteShield', name: '神圣护盾', icon: '✨', effect: '获得100%HP护盾', hpMult: 3 },
+];
+
 function updateBoss() {
-    gameState._bossDying = false; // 清除击杀锁
+    gameState._bossDying = false;
     gameState.maxHP = Math.floor(100 * Math.pow(1.8, gameState.level - 1));
     gameState.currentHP = gameState.maxHP;
+    gameState.eliteAbilities = [];
+    
+    // 每10关生成精英Boss
+    const isElite = gameState.level > 0 && gameState.level % 10 === 0;
+    if (isElite) {
+        // 随机选择3-10个能力
+        const abilityCount = 3 + Math.floor(Math.random() * 8); // 3-10个
+        const shuffled = [...eliteAbilities].sort(() => Math.random() - 0.5);
+        gameState.eliteAbilities = shuffled.slice(0, Math.min(abilityCount, shuffled.length));
+        
+        // 应用能力加成
+        let hpMultiplier = 1;
+        let dmgMultiplier = 1;
+        gameState.eliteAbilities.forEach(a => {
+            if (a.hpMult) hpMultiplier *= a.hpMult;
+            if (a.dmgMult) dmgMultiplier *= a.dmgMult;
+        });
+        gameState.maxHP = Math.floor(gameState.maxHP * hpMultiplier);
+        gameState.currentHP = gameState.maxHP;
+        gameState.eliteDmgMult = dmgMultiplier;
+    } else {
+        gameState.eliteDmgMult = 1;
+    }
     
     const bossNames = [
         "燃气表-I型 基本型", "燃气表-II型 标准型", "燃气表-III型 智能型",
@@ -1080,17 +1144,28 @@ function updateBoss() {
         "燃气表-X型 智能远传型"
     ];
     
-    document.getElementById('bossName').textContent = bossNames[(gameState.level - 1) % bossNames.length];
+    let bossTitle = bossNames[(gameState.level - 1) % bossNames.length];
+    if (isElite) bossTitle = '⭐ ' + bossTitle + ' (精英)';
+    document.getElementById('bossName').textContent = bossTitle;
     document.getElementById('bossLevel').textContent = gameState.level;
     
-    // 每个关卡使用不同的emoji（循环使用40个emoji）
+    // 精英Boss能力显示
+    const eliteInfo = document.getElementById('eliteBossInfo');
+    if (eliteInfo) {
+        if (isElite && gameState.eliteAbilities.length > 0) {
+            eliteInfo.style.display = 'block';
+            eliteInfo.innerHTML = gameState.eliteAbilities.map(a => `${a.icon}${a.name}:${a.effect}`).join(' | ');
+        } else {
+            eliteInfo.style.display = 'none';
+        }
+    }
+    
     const imageIndex = (gameState.level - 1) % bossImages.length;
     const bossEmoji = bossImages[imageIndex];
     
-    // 更新Boss图片 - 直接设置emoji
     const bossArea = document.getElementById('bossImage');
     if (bossArea) {
-        bossArea.textContent = bossEmoji;
+        bossArea.textContent = isElite ? '👑' : bossEmoji;
         bossArea.style.fontSize = '120px';
         bossArea.style.display = 'flex';
         bossArea.style.alignItems = 'center';
@@ -1147,6 +1222,7 @@ function upgradeClick() {
 }
 
 // ===== 批量升级秒伤 =====
+// ===== 升级自动点击 =====
 function upgradeDPS() {
     const select = document.getElementById('upgradeMultiplier');
     const multiplier = select ? select.value : '1';
@@ -1174,7 +1250,9 @@ function upgradeDPS() {
         gameState.gold -= totalCost;
         gameState.dpsLevel += actualUpgrades;
         gameState.dps = gameState.dpsLevel;
-        showNotification(`⚔️ 秒伤 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
+        // 重新设置自动点击间隔
+        startAutoAttack();
+        showNotification(`🤖 自动点击 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
         saveGame();
@@ -1192,6 +1270,7 @@ function getMaxAffordable(type) {
         case 'dps': level = gameState.dpsLevel; baseCost = 10; break;
         case 'regen': level = gameState.regenLevel; baseCost = 15; break;
         case 'hp': level = gameState.hpLevel; baseCost = 20; break;
+        case 'defense': level = gameState.defenseLevel; baseCost = 25; break;
         default: level = 0; baseCost = 10;
     }
     let count = 0;
@@ -1258,6 +1337,16 @@ function updateUpgradeCosts() {
             hpTotal += Math.floor(20 * Math.pow(hpLvl + i, 1.5));
         }
         hpCostEl.textContent = formatNumber(hpTotal);
+    }
+    
+    // 防御升级成本
+    const defCostEl = document.getElementById('defenseCost');
+    if (defCostEl) {
+        let defTotal = 0, defLvl = gameState.defenseLevel;
+        for (let i = 0; i < (multiplier === 'max' ? getMaxAffordable('defense') : count); i++) {
+            defTotal += Math.floor(25 * Math.pow(defLvl + i, 1.5));
+        }
+        defCostEl.textContent = formatNumber(defTotal);
     }
 }
 
@@ -1341,13 +1430,51 @@ function upgradeHP() {
     }
 }
 
-// 自动攻击（DPS）
+// ===== 升级防御 =====
+function upgradeDefense() {
+    const select = document.getElementById('upgradeMultiplier');
+    const multiplier = select ? select.value : '1';
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordable('defense') : parseInt(multiplier);
+    
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    let actualUpgrades = 0;
+    
+    for (let i = 0; i < maxUpgrades; i++) {
+        const cost = Math.floor(25 * Math.pow(gameState.defenseLevel + i, 1.5));
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            actualUpgrades++;
+        } else {
+            break;
+        }
+    }
+    
+    if (actualUpgrades > 0) {
+        gameState.gold -= totalCost;
+        gameState.defenseLevel += actualUpgrades;
+        showNotification(`🛡️ 防御 +${actualUpgrades} (共 ${gameState.defenseLevel} 级)`);
+        updateDisplay();
+        updateStatsPanel();
+        saveGame();
+    } else {
+        showNotification('金币不足!');
+    }
+}
+
+// 自动攻击（自动点击）
 function startAutoAttack() {
+    // 动态间隔：dpsLevel越高，攻击越快，最快100ms一次
+    const interval = Math.max(100, Math.floor(1000 / (1 + gameState.dpsLevel * 0.3)));
     safeInterval('autoAttack', () => {
         if (gameState.playerCurrentHp <= 0) return;
         
-        // === 计算基础伤害 ===
-        let baseDamage = calculateDPS();
+        // === 计算基础伤害（和手动点击一样）===
+        let baseDamage = calculateAttack();
         
         // === 计算命中次数（多重打击 + 连击期望值）===
         let hits = 1;
@@ -1459,7 +1586,7 @@ function startAutoAttack() {
         updateHPBar();
         updateDisplay();
         updateStatsPanel();
-    }, 1000);
+    }, interval);
 }
 
 // 连锁闪电特效
@@ -1679,25 +1806,30 @@ function renderArtifacts() {
     const totalCount = artifactConfig.length;
     const allUnlocked = unlockedCount >= totalCount;
     const nextUnlockPrice = getNextUnlockPrice();
+    const ap = gameState.artifactPoints || 0;
     
-    // 更新商店信息（使用HTML模板里已有的DOM元素）
+    // 更新商店信息
     const shopInfo = document.getElementById('artifactShopInfo');
     const shopBtn = document.getElementById('artifactShopBtn');
     if (shopInfo) {
         if (allUnlocked) {
             shopInfo.textContent = `已解锁: ${unlockedCount}/${totalCount} ✅`;
         } else {
-            shopInfo.textContent = `已解锁: ${unlockedCount}/${totalCount} | 下一把: ${formatNumber(nextUnlockPrice)} 💰`;
+            shopInfo.textContent = `已解锁: ${unlockedCount}/${totalCount} | 下一把: ${formatNumber(nextUnlockPrice)} 🔮`;
         }
     }
     if (shopBtn) {
-        shopBtn.disabled = allUnlocked || gameState.gold < nextUnlockPrice;
+        shopBtn.disabled = allUnlocked || ap < nextUnlockPrice;
         if (allUnlocked) {
             shopBtn.textContent = '✅ 全部解锁';
         } else {
-            shopBtn.textContent = `💰 ${formatNumber(nextUnlockPrice)} 随机解锁`;
+            shopBtn.textContent = `🔮 ${formatNumber(nextUnlockPrice)} 随机解锁`;
         }
     }
+    
+    // 神器点余额
+    const apDisplay = document.getElementById('artifactPointsDisplay');
+    if (apDisplay) apDisplay.textContent = formatNumber(ap);
     
     // 添加神器列表标题
     const headerDiv = document.createElement('div');
@@ -1716,22 +1848,55 @@ function renderArtifacts() {
         for (let i = 0; i < maxUpgrades; i++) {
             totalCost += getArtifactUpgradeCost(artifact, level + i);
         }
-        const canAfford = gameState.gold >= totalCost && maxUpgrades > 0;
+        const canAfford = ap >= totalCost && maxUpgrades > 0;
+        const bonusText = getArtifactBonusText(artifact, level);
         
         const card = document.createElement('div');
         card.className = 'art-card';
         card.innerHTML = `
             <div class="art-icon">${artifact.icon}</div>
             <div class="art-name">${artifact.name}</div>
-            <div class="art-lv">等级: ${level}</div>
+            <div class="art-lv">Lv.${level}</div>
+            <div class="art-bonus" style="color:#ffcc00;font-size:0.72em;margin:2px 0;">${bonusText}</div>
             <div class="art-desc">${artifact.desc}</div>
             <button class="art-btn" onclick="upgradeArtifact('${artifact.id}')" 
                     ${canAfford ? '' : 'disabled'}>
-                ⬆️ ×${maxUpgrades} — ${formatNumber(totalCost)} 💰
+                ⬆️ ×${maxUpgrades} — ${formatNumber(totalCost)} 🔮
             </button>
         `;
         grid.appendChild(card);
     });
+}
+
+// 获取神器总加成描述
+function getArtifactBonusText(artifact, level) {
+    if (level <= 0) return '';
+    switch (artifact.id) {
+        case 'powerBook': return `攻击力 ×${Math.pow(1.5, level).toFixed(1)}`;
+        case 'sharpness': return `攻击力 +${(level * 25)}%`;
+        case 'critEye': return level === 1 ? '暴率 5%' : `暴率 +${(5 + (level-1)*2)}%`;
+        case 'fatalBlow': return `暴伤 ×${Math.pow(1.5, level).toFixed(1)}`;
+        case 'fireSoul': return `火伤 ×${Math.pow(2, level).toFixed(0)}`;
+        case 'lightning': return `雷伤 ×${Math.pow(2, level).toFixed(0)}`;
+        case 'iceHeart': return `冰伤 ×${Math.pow(2, level).toFixed(0)}`;
+        case 'guardian': return `血量 ×${Math.pow(1.5, level).toFixed(1)}`;
+        case 'goldMagnet': return `金币 ×${Math.pow(1.5, level).toFixed(1)}`;
+        case 'explosion': return `爆炸 ${level * 25}%`;
+        case 'thorns': return `反弹 ${level * 10}%`;
+        case 'poison': return `毒 ${level * 2}%/秒`;
+        case 'berserk': return `残血 ×${Math.pow(1.5, level).toFixed(1)}`;
+        case 'chainLightning': return `连锁 ${level * 50}%`;
+        case 'lifesteal': return `吸血 ${level * 2}%`;
+        case 'dodge': return level === 1 ? '闪避 10%' : `闪避 +${(10 + (level-1)*5)}%`;
+        case 'attackSpeed': return `攻速 ×${Math.pow(1.2, level).toFixed(1)}`;
+        case 'multiHit': return level === 1 ? '连击2次' : `连击 +${(1 + (level-1)*0.5).toFixed(1)}次`;
+        case 'allDamage': return `所有伤害 +${level * 50}%`;
+        case 'stoneSkin': return `石肤 +${level * 10}%`;
+        case 'regen': return level === 1 ? '狂战 10%' : `狂战 +${(10 + (level-1)*5)}%`;
+        case 'doubleGold': return `双金 ${level * 100}%`;
+        case 'wealthMedal': return `富豪 +${level * 200}金`;
+        default: return `Lv.${level}`;
+    }
 }
 
 // 获取神器升级费用（无限升级）
@@ -1744,8 +1909,8 @@ function getArtifactUpgradeCost(artifact, currentLevel) {
 function buyRandomArtifact() {
     const price = getNextUnlockPrice();
     
-    if (gameState.gold < price) {
-        showNotification('金币不足!');
+    if ((gameState.artifactPoints || 0) < price) {
+        showNotification('🔮 神器点不足！');
         return;
     }
     
@@ -1756,7 +1921,7 @@ function buyRandomArtifact() {
         return;
     }
     
-    gameState.gold -= price;
+    gameState.artifactPoints -= price;
     
     // 随机选择一个未解锁的神器
     const randomArtifact = lockedArtifacts[Math.floor(Math.random() * lockedArtifacts.length)];
@@ -1797,8 +1962,8 @@ function upgradeArtifact(artifactId) {
         totalCost += getArtifactUpgradeCost(artifact, level + i);
     }
     
-    if (gameState.gold >= totalCost) {
-        gameState.gold -= totalCost;
+    if ((gameState.artifactPoints || 0) >= totalCost) {
+        gameState.artifactPoints -= totalCost;
         level += maxUpgrades;
         gameState.artifacts[artifactId] = level;
         showNotification(`${artifact.name} → Lv.${level} (+${maxUpgrades})！`);
@@ -1807,16 +1972,17 @@ function upgradeArtifact(artifactId) {
         updatePlayerHP();
         saveGame();
     } else {
-        showNotification('金币不足!');
+        showNotification('🔮 神器点不足!');
     }
 }
 
 function getMaxAffordableArtifact(artifact, startLevel) {
     let count = 0;
     let totalCost = 0;
+    const points = gameState.artifactPoints || 0;
     while (count < 10000) {
         const cost = getArtifactUpgradeCost(artifact, startLevel + count);
-        if (gameState.gold >= totalCost + cost) {
+        if (points >= totalCost + cost) {
             totalCost += cost;
             count++;
         } else {
@@ -2335,6 +2501,8 @@ function rebirth() {
     const savedRebirthPoints = gameState.rebirthPoints + rebirthReward;
     const savedTotalRebirths = (gameState.totalRebirths || 0) + 1;
     const savedTotalBossKills = gameState.totalBossKills || 0;
+    // 重生奖励赠送神器点（额外20%）
+    const savedArtifactPoints = (gameState.artifactPoints || 0) + Math.floor(rebirthReward * 0.2);
     
     gameState = {
         gold: 0,
@@ -2356,6 +2524,9 @@ function rebirth() {
         rebirthPoints: savedRebirthPoints,  // 重生点永久保留
         totalRebirths: savedTotalRebirths,  // 累计重生次数
         artifacts: savedArtifacts,  // 神器永久保存
+        artifactPoints: savedArtifactPoints, // 神器点永久保留
+        eliteAbilities: [],
+        eliteDmgMult: 1,
         equipment: {
             weapon: null,
             helmet: null,
@@ -2404,7 +2575,18 @@ function updateDisplay() {
     document.getElementById('clickCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.clickLevel, 1.5)));
     document.getElementById('dpsCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5)));
     document.getElementById('clickLevel').textContent = gameState.clickDamage;
-    document.getElementById('dpsLevel').textContent = gameState.dps;
+    // 自动点击：显示攻击次数/秒
+    const aps = gameState.dpsLevel > 0 ? (1 + gameState.dpsLevel * 0.3).toFixed(1) : 0;
+    document.getElementById('dpsLevel').textContent = aps + '次/秒';
+    // 回血显示
+    const regenEl = document.getElementById('regenLevel');
+    if (regenEl) regenEl.textContent = (gameState.regenLevel * 5) + '/s';
+    // 血量显示
+    const hpEl = document.getElementById('hpLevel');
+    if (hpEl) hpEl.textContent = '+' + (gameState.hpLevel * 50);
+    // 防御显示
+    const defEl = document.getElementById('defenseLevel');
+    if (defEl) defEl.textContent = gameState.defenseLevel * 2;
     document.getElementById('rebirthBtn').disabled = gameState.maxLevel < 10;
     
     // 重生点显示
@@ -2414,6 +2596,8 @@ function updateDisplay() {
     if (rps2) rps2.textContent = gameState.rebirthPoints || 0;
     const trc = document.getElementById('totalRebirthsDisplay');
     if (trc) trc.textContent = gameState.totalRebirths || 0;
+    const rap = document.getElementById('rebirthArtifactPoints');
+    if (rap) rap.textContent = gameState.artifactPoints || 0;
     
     // 升级按钮禁用状态
     const upgradeBtns = document.querySelectorAll('.upgrade-btn');
@@ -2421,6 +2605,7 @@ function updateDisplay() {
     if (upgradeBtns[1]) upgradeBtns[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
     if (upgradeBtns[2]) upgradeBtns[2].disabled = gameState.gold < Math.floor(15 * Math.pow(gameState.regenLevel, 1.5));
     if (upgradeBtns[3]) upgradeBtns[3].disabled = gameState.gold < Math.floor(20 * Math.pow(gameState.hpLevel, 1.5));
+    if (upgradeBtns[4]) upgradeBtns[4].disabled = gameState.gold < Math.floor(25 * Math.pow(gameState.defenseLevel, 1.5));
     
     // 经验条显示
     const expFill = document.getElementById('expFill');
@@ -2452,7 +2637,8 @@ function updateStatsPanel() {
     const regenLv = gameState.artifacts.regen || 0;
     
     // ========== DPS 分解 ==========
-    const baseDps = gameState.dps;
+    const baseDps = calculateAttack(); // 单次点击伤害
+    const autoClickApS = gameState.dpsLevel > 0 ? (1 + gameState.dpsLevel * 0.3) : 1; // 自动点击攻速
     const powerBookMult = powerBookLv > 0 ? Math.pow(1.5, powerBookLv) : 1;
     const sharpnessMult = sharpnessLv > 0 ? Math.pow(1.25, sharpnessLv) : 1;
     const totalArtifactMult = powerBookMult * sharpnessMult;
@@ -2491,7 +2677,8 @@ function updateStatsPanel() {
     
     // 合成DPS分解列表
     const dpsItems = [];
-    dpsItems.push({ name: '📊 基础DPS', value: baseDps, mult: 1 });
+    dpsItems.push({ name: '📊 单次伤害', value: baseDps, mult: 1 });
+    if (gameState.dpsLevel > 0) dpsItems.push({ name: '🤖 自动点击', value: 0, mult: 0, note: autoClickApS.toFixed(1) + '次/秒' });
     if (powerBookLv > 0) dpsItems.push({ name: '📖 力量之书', value: dpsAfterArtifact - baseDps, mult: 1, note: '×' + powerBookMult.toFixed(2) });
     if (sharpnessLv > 1) dpsItems.push({ name: '🗡️ 锋利之爪', value: (baseDps * powerBookMult * sharpnessMult) - (baseDps * powerBookMult), mult: 1, note: '×' + sharpnessMult.toFixed(2) });
     if (allDamageLv > 0) dpsItems.push({ name: '🌟 全能戒指', value: totalDps * allDamageBonus, mult: 1, note: '+' + (allDamageLv * 50) + '%' });
@@ -2686,6 +2873,10 @@ function loadGame() {
         // 新系统字段兼容
         if (gameState.regenLevel === undefined) gameState.regenLevel = 0;
         if (gameState.hpLevel === undefined) gameState.hpLevel = 0;
+        if (gameState.defenseLevel === undefined) gameState.defenseLevel = 0;
+        if (gameState.artifactPoints === undefined) gameState.artifactPoints = 0;
+        if (gameState.eliteAbilities === undefined) gameState.eliteAbilities = [];
+        if (gameState.eliteDmgMult === undefined) gameState.eliteDmgMult = 1;
         if (gameState.playerExp === undefined) gameState.playerExp = 0;
         if (gameState.playerExpNeeded === undefined) gameState.playerExpNeeded = 100;
         if (gameState.playerLevel === undefined) gameState.playerLevel = 1;

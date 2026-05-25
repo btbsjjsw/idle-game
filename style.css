@@ -194,6 +194,24 @@ body {
     box-shadow: none;
 }
 
+.btn-purple {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #7c3aed 100%);
+    color: #fff;
+    border-color: #a855f7;
+    box-shadow: 0 2px 8px rgba(168,85,247,0.2);
+}
+.btn-purple:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(168,85,247,0.4);
+}
+.btn-purple:disabled {
+    background: #222;
+    border-color: #333;
+    color: #555;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 /* ============================================
    玩家状态栏
    ============================================ */

@@ -34,6 +34,7 @@
                 <button class="btn btn-gold" onclick="openArtifactModal()">🗡️ 神器</button>
                 <button class="btn btn-red" id="rebirthBtn" onclick="openRebirthModal()" disabled>🔄 重生</button>
                 <span style="color:var(--gold);font-size:0.85em;margin-left:6px;">🔄 <span id="rebirthPointsDisplay">0</span></span>
+                <span style="color:#a855f7;font-size:0.85em;margin-left:8px;">🔮 <span id="rebirthArtifactPoints">0</span></span>
             </div>
         </div>
 
@@ -47,7 +48,7 @@
                 </div>
                 <div class="player-hp-wrap">
                     <div class="player-hp-fill" id="playerHpFill"></div>
-                    <div class="player-hp-text">❤️ <span id="playerCurrentHp">100</span> / <span id="playerMaxHp">100</span></div>
+                    <div class="player-hp-text">❤️ <span id="playerCurrentHp">100</span> / <span id="playerMaxHp">100</span> <span id="playerRegenDisplay" style="color:#00ff88;font-size:0.85em;"></span></div>
                 </div>
                 <div class="player-exp-wrap">
                     <div class="player-exp-fill" id="expFill"></div>
@@ -75,6 +76,7 @@
             <div class="boss-click-area" id="bossClickArea" onclick="attackBoss(event)" oncontextmenu="event.preventDefault()">
                 <div class="boss-image" id="bossImage">💀</div>
             </div>
+            <div id="eliteBossInfo" style="display:none; text-align:center; color:#ffcc00; font-size:0.75em; margin-top:6px; padding:4px; background:rgba(255,0,0,0.15); border-radius:4px;"></div>
         </div>
 
         <!-- 快捷数据条 -->
@@ -112,19 +114,24 @@
                     <div class="upgrade-btn-lv">总伤害: <span id="clickLevel">1</span></div>
                 </button>
                 <button class="upgrade-btn" onclick="upgradeDPS()">
-                    <div class="upgrade-btn-name">升级秒伤 DPS</div>
+                    <div class="upgrade-btn-name">升级自动点击</div>
                     <div class="upgrade-btn-cost">💰 <span id="dpsCost">10</span></div>
-                    <div class="upgrade-btn-lv">总DPS: <span id="dpsLevel">0</span></div>
+                    <div class="upgrade-btn-lv">攻击速度: <span id="dpsLevel">0次/秒</span></div>
                 </button>
                 <button class="upgrade-btn" onclick="upgradeRegen()">
                     <div class="upgrade-btn-name">升级回血</div>
                     <div class="upgrade-btn-cost">💰 <span id="regenCost">15</span></div>
-                    <div class="upgrade-btn-lv">每秒回血: <span id="regenLevel">0</span></div>
+                    <div class="upgrade-btn-lv">每秒回血: <span id="regenLevel">0/s</span></div>
                 </button>
                 <button class="upgrade-btn" onclick="upgradeHP()">
                     <div class="upgrade-btn-name">升级血量</div>
                     <div class="upgrade-btn-cost">💰 <span id="hpCost">20</span></div>
-                    <div class="upgrade-btn-lv">血量加成: <span id="hpLevel">0</span></div>
+                    <div class="upgrade-btn-lv">血量加成: <span id="hpLevel">+0</span></div>
+                </button>
+                <button class="upgrade-btn" onclick="upgradeDefense()">
+                    <div class="upgrade-btn-name">升级防御</div>
+                    <div class="upgrade-btn-cost">💰 <span id="defenseCost">25</span></div>
+                    <div class="upgrade-btn-lv">减伤值: <span id="defenseLevel">0</span></div>
                 </button>
             </div>
         </div>
@@ -260,7 +267,8 @@
             <div class="art-shop">
                 <div class="art-shop-title">🎰 神器商店</div>
                 <div class="art-shop-info" id="artifactShopInfo">已解锁: 0/40</div>
-                <button class="btn btn-gold" id="artifactShopBtn" onclick="buyRandomArtifact()">💰 随机解锁</button>
+                <div class="art-shop-info" style="color:#a855f7;font-size:0.85em;">🔮 神器点: <span id="artifactPointsDisplay">0</span></div>
+                <button class="btn btn-purple" id="artifactShopBtn" onclick="buyRandomArtifact()">🔮 随机解锁</button>
             </div>
             <div class="upgrade-bar" style="margin-bottom:12px;">
                 <span class="upgrade-bar-label">升级数量</span>

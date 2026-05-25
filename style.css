@@ -943,6 +943,15 @@ select {
 /* ============================================
    伤害数字动画
    ============================================ */
+.damage-float {
+    position: absolute;
+    pointer-events: none;
+    z-index: 9999;
+    font-weight: bold;
+    animation: float-up 1s ease-out forwards;
+    white-space: nowrap;
+}
+
 @keyframes float-up {
     0%   { transform: translateY(0) scale(1);   opacity: 1; }
     80%  { opacity: 0.8; }

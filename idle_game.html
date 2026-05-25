@@ -49,6 +49,10 @@
                     <div class="player-hp-fill" id="playerHpFill"></div>
                     <div class="player-hp-text">❤️ <span id="playerCurrentHp">100</span> / <span id="playerMaxHp">100</span></div>
                 </div>
+                <div class="player-exp-wrap">
+                    <div class="player-exp-fill" id="expFill"></div>
+                    <div class="player-exp-text">⭐ <span id="expText">0 / 100</span></div>
+                </div>
             </div>
             <div class="player-btns">
                 <button class="btn-sm" onclick="openInventoryModal()">🎒</button>
@@ -111,6 +115,16 @@
                     <div class="upgrade-btn-name">升级秒伤 DPS</div>
                     <div class="upgrade-btn-cost">💰 <span id="dpsCost">10</span></div>
                     <div class="upgrade-btn-lv">总DPS: <span id="dpsLevel">0</span></div>
+                </button>
+                <button class="upgrade-btn" onclick="upgradeRegen()">
+                    <div class="upgrade-btn-name">升级回血</div>
+                    <div class="upgrade-btn-cost">💰 <span id="regenCost">15</span></div>
+                    <div class="upgrade-btn-lv">每秒回血: <span id="regenLevel">0</span></div>
+                </button>
+                <button class="upgrade-btn" onclick="upgradeHP()">
+                    <div class="upgrade-btn-name">升级血量</div>
+                    <div class="upgrade-btn-cost">💰 <span id="hpCost">20</span></div>
+                    <div class="upgrade-btn-lv">血量加成: <span id="hpLevel">0</span></div>
                 </button>
             </div>
         </div>

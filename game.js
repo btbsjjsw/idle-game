@@ -18,6 +18,11 @@ let gameState = {
     maxHP: 100,
     playerMaxHp: 500,  // 基础血量500
     playerCurrentHp: 500,
+    regenLevel: 0,      // 回血等级
+    hpLevel: 0,         // 血量等级
+    playerExp: 0,       // 当前经验
+    playerExpNeeded: 100, // 升级所需经验
+    playerLevel: 1,     // 玩家等级
     rebirthPoints: 0,   // 重生点（重生获得，买宠物用，永久保留）
     totalRebirths: 0,   // 累计重生次数
     artifacts: {},
@@ -272,6 +277,7 @@ function initGame() {
     startAutoAttack();
     startBossAttack();
     startPoisonTick();
+    startRegen();
     startGameTimer();
     checkOfflineGains();
     safeInterval('autoSave', saveGame, 30000);
@@ -539,6 +545,11 @@ function attackBoss(event) {
 function showLifestealNumber(amount, x, y) {
     const float = document.createElement('div');
     float.className = 'damage-float';
+    float.style.position = 'absolute';
+    float.style.pointerEvents = 'none';
+    float.style.zIndex = '9999';
+    float.style.fontWeight = 'bold';
+    float.style.whiteSpace = 'nowrap';
     float.textContent = '+' + formatNumber(amount) + ' ❤️';
     
     // 显示在玩家区域
@@ -570,6 +581,12 @@ function showLifestealNumber(amount, x, y) {
 function showDamageNumber(damage, x, y, effectType) {
     const dmgFloat = document.createElement('div');
     dmgFloat.className = 'damage-float';
+    // 关键定位样式直接内联，防止CSS未加载导致定位失效
+    dmgFloat.style.position = 'absolute';
+    dmgFloat.style.pointerEvents = 'none';
+    dmgFloat.style.zIndex = '9999';
+    dmgFloat.style.fontWeight = 'bold';
+    dmgFloat.style.whiteSpace = 'nowrap';
     dmgFloat.textContent = formatNumber(Math.floor(damage));
     // 随机偏移防止数字重叠
     const offsetX = (Math.random() - 0.5) * 60;
@@ -768,12 +785,35 @@ function killBoss() {
     if (gameState.level > gameState.maxLevel) gameState.maxLevel = gameState.level;
     gameState.totalBossKills = (gameState.totalBossKills || 0) + 1;
     
+    // 经验奖励
+    const expReward = 10 + gameState.level * 2;
+    addPlayerExp(expReward);
+    
     // 装备掉落
     dropEquipment();
     
     updateBoss();
-    showNotification(`击杀Boss! +${formatNumber(Math.floor(finalGold))} 💰`);
+    showNotification(`击杀Boss! +${formatNumber(Math.floor(finalGold))} 💰 +${expReward} 经验`);
     updateDisplay();
+}
+
+// ===== 玩家经验系统 =====
+function addPlayerExp(amount) {
+    gameState.playerExp += amount;
+    checkPlayerLevelUp();
+}
+
+function checkPlayerLevelUp() {
+    while (gameState.playerExp >= gameState.playerExpNeeded) {
+        gameState.playerExp -= gameState.playerExpNeeded;
+        gameState.playerLevel++;
+        // 每升一级，增加基础属性
+        gameState.clickDamage += 1;
+        gameState.clickLevel += 1;
+        // 下一级所需经验增长
+        gameState.playerExpNeeded = Math.floor(gameState.playerExpNeeded * 1.2 + 50);
+        showNotification(`🎉 玩家升级! Lv.${gameState.playerLevel} 点击伤害+1!`);
+    }
 }
 
 // 装备掉落系统
@@ -907,6 +947,11 @@ function startBossAttack() {
 function showThornsDamage(damage, x, y) {
     const float = document.createElement('div');
     float.className = 'damage-float';
+    float.style.position = 'absolute';
+    float.style.pointerEvents = 'none';
+    float.style.zIndex = '9999';
+    float.style.fontWeight = 'bold';
+    float.style.whiteSpace = 'nowrap';
     float.textContent = '🌹' + formatNumber(Math.floor(damage));
     float.style.left = x + 'px';
     float.style.top = y + 'px';
@@ -919,14 +964,14 @@ function showThornsDamage(damage, x, y) {
 
 // 更新玩家HP显示
 function updatePlayerHP() {
-    // 计算最大生命值（基础500，每级成长10）
-    let maxHp = 500 + (gameState.clickLevel - 1) * 10;
+    // 计算最大生命值（基础500 + 血量等级加成 + 点击等级成长 + 装备 + 神器）
+    let maxHp = 500 + gameState.hpLevel * 50 + (gameState.clickLevel - 1) * 10;
     Object.values(gameState.equipment).forEach(item => {
         if (item && item.stats.maxHp) maxHp += item.stats.maxHp;
     });
     if (gameState.artifacts.guardian > 0) maxHp *= Math.pow(1.5, gameState.artifacts.guardian);
     
-    gameState.playerMaxHp = maxHp;
+    gameState.playerMaxHp = Math.floor(maxHp);
     // 复活后恢复满血
     if (gameState.playerCurrentHp > maxHp) gameState.playerCurrentHp = maxHp;
     if (gameState.playerCurrentHp < 0) gameState.playerCurrentHp = 0;
@@ -989,6 +1034,11 @@ function resetAllGameData() {
         clickLevel: 1,
         dps: 0,
         dpsLevel: 0,
+        regenLevel: 0,
+        hpLevel: 0,
+        playerExp: 0,
+        playerExpNeeded: 100,
+        playerLevel: 1,
         artifactPoints: 0,
         artifacts: {},
         equipment: {},
@@ -1135,11 +1185,19 @@ function upgradeDPS() {
 
 // ===== 获取可购买的 最大数量 =====
 function getMaxAffordable(type) {
-    let level = type === 'click' ? gameState.clickLevel : gameState.dpsLevel;
+    let level;
+    let baseCost = 10;
+    switch(type) {
+        case 'click': level = gameState.clickLevel; baseCost = 10; break;
+        case 'dps': level = gameState.dpsLevel; baseCost = 10; break;
+        case 'regen': level = gameState.regenLevel; baseCost = 15; break;
+        case 'hp': level = gameState.hpLevel; baseCost = 20; break;
+        default: level = 0; baseCost = 10;
+    }
     let count = 0;
     
     while (count < 10000) {
-        const cost = Math.floor(10 * Math.pow(level + count, 1.5));
+        const cost = Math.floor(baseCost * Math.pow(level + count, 1.5));
         if (gameState.gold >= cost) {
             level++;
             count++;
@@ -1181,6 +1239,106 @@ function updateUpgradeCosts() {
     
     document.getElementById('clickCost').textContent = clickCost;
     document.getElementById('dpsCost').textContent = dpsCost;
+    
+    // 回血升级成本
+    const regenCostEl = document.getElementById('regenCost');
+    if (regenCostEl) {
+        let regenTotal = 0, regenLvl = gameState.regenLevel;
+        for (let i = 0; i < (multiplier === 'max' ? getMaxAffordable('regen') : count); i++) {
+            regenTotal += Math.floor(15 * Math.pow(regenLvl + i, 1.5));
+        }
+        regenCostEl.textContent = formatNumber(regenTotal);
+    }
+    
+    // 血量升级成本
+    const hpCostEl = document.getElementById('hpCost');
+    if (hpCostEl) {
+        let hpTotal = 0, hpLvl = gameState.hpLevel;
+        for (let i = 0; i < (multiplier === 'max' ? getMaxAffordable('hp') : count); i++) {
+            hpTotal += Math.floor(20 * Math.pow(hpLvl + i, 1.5));
+        }
+        hpCostEl.textContent = formatNumber(hpTotal);
+    }
+}
+
+// ===== 升级回血 =====
+function upgradeRegen() {
+    const select = document.getElementById('upgradeMultiplier');
+    const multiplier = select ? select.value : '1';
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordable('regen') : parseInt(multiplier);
+    
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    let actualUpgrades = 0;
+    
+    for (let i = 0; i < maxUpgrades; i++) {
+        const cost = Math.floor(15 * Math.pow(gameState.regenLevel + i, 1.5));
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            actualUpgrades++;
+        } else {
+            break;
+        }
+    }
+    
+    if (actualUpgrades > 0) {
+        gameState.gold -= totalCost;
+        gameState.regenLevel += actualUpgrades;
+        showNotification(`❤️ 回血 +${actualUpgrades} (共 ${gameState.regenLevel} 级)`);
+        updateDisplay();
+        updateStatsPanel();
+        saveGame();
+    } else {
+        showNotification('金币不足!');
+    }
+}
+
+// ===== 升级血量 =====
+function upgradeHP() {
+    const select = document.getElementById('upgradeMultiplier');
+    const multiplier = select ? select.value : '1';
+    const maxUpgrades = multiplier === 'max' ? getMaxAffordable('hp') : parseInt(multiplier);
+    
+    if (maxUpgrades <= 0) {
+        showNotification('金币不足!');
+        return;
+    }
+    
+    let totalCost = 0;
+    let actualUpgrades = 0;
+    
+    for (let i = 0; i < maxUpgrades; i++) {
+        const cost = Math.floor(20 * Math.pow(gameState.hpLevel + i, 1.5));
+        if (gameState.gold >= totalCost + cost) {
+            totalCost += cost;
+            actualUpgrades++;
+        } else {
+            break;
+        }
+    }
+    
+    if (actualUpgrades > 0) {
+        gameState.gold -= totalCost;
+        gameState.hpLevel += actualUpgrades;
+        // 升级血量时，当前血量按比例增加
+        const oldMaxHp = gameState.playerMaxHp;
+        updatePlayerHP();
+        const newMaxHp = gameState.playerMaxHp;
+        if (oldMaxHp > 0) {
+            gameState.playerCurrentHp = Math.min(newMaxHp, Math.floor(gameState.playerCurrentHp * (newMaxHp / oldMaxHp)));
+        }
+        showNotification(`🛡️ 血量 +${actualUpgrades} (共 ${gameState.hpLevel} 级)`);
+        updateDisplay();
+        updatePlayerHP();
+        updateStatsPanel();
+        saveGame();
+    } else {
+        showNotification('金币不足!');
+    }
 }
 
 // 自动攻击（DPS）
@@ -1401,6 +1559,11 @@ function showPoisonDamage(damage) {
     const rect = bossArea.getBoundingClientRect();
     const float = document.createElement('div');
     float.className = 'damage-float';
+    float.style.position = 'absolute';
+    float.style.pointerEvents = 'none';
+    float.style.zIndex = '9999';
+    float.style.fontWeight = 'bold';
+    float.style.whiteSpace = 'nowrap';
     float.textContent = '☠️' + formatNumber(Math.floor(damage));
     float.style.left = (rect.left + rect.width/2 + (Math.random()-0.5)*50) + 'px';
     float.style.top = (rect.top + (Math.random()-0.5)*50) + 'px';
@@ -1409,6 +1572,18 @@ function showPoisonDamage(damage) {
     float.style.textShadow = '0 0 10px #00ff00';
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 1000);
+}
+
+// ===== 回血系统 =====
+function startRegen() {
+    safeInterval('regen', () => {
+        if (gameState.playerCurrentHp > 0 && gameState.playerCurrentHp < gameState.playerMaxHp && gameState.regenLevel > 0) {
+            // 每秒回复：regenLevel * 5 HP
+            const regenAmount = gameState.regenLevel * 5;
+            gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + regenAmount);
+            updatePlayerHP();
+        }
+    }, 1000);
 }
 
 // 击杀爆炸效果
@@ -2173,6 +2348,11 @@ function rebirth() {
         maxHP: 100,
         playerMaxHp: 500,
         playerCurrentHp: 500,
+        regenLevel: 0,      // 重生后重置
+        hpLevel: 0,         // 重生后重置
+        playerExp: 0,       // 重生后重置
+        playerExpNeeded: 100, // 重生后重置
+        playerLevel: 1,     // 重生后重置
         rebirthPoints: savedRebirthPoints,  // 重生点永久保留
         totalRebirths: savedTotalRebirths,  // 累计重生次数
         artifacts: savedArtifacts,  // 神器永久保存
@@ -2220,7 +2400,7 @@ function updateDisplay() {
     // 快捷数据条的金币显示
     const gd = document.getElementById('goldDisplay');
     if (gd) gd.textContent = formatNumber(gameState.gold);
-    document.getElementById('playerLevel').textContent = gameState.clickLevel;
+    document.getElementById('playerLevel').textContent = gameState.playerLevel;
     document.getElementById('clickCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.clickLevel, 1.5)));
     document.getElementById('dpsCost').textContent = formatNumber(Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5)));
     document.getElementById('clickLevel').textContent = gameState.clickDamage;
@@ -2235,8 +2415,23 @@ function updateDisplay() {
     const trc = document.getElementById('totalRebirthsDisplay');
     if (trc) trc.textContent = gameState.totalRebirths || 0;
     
-    document.querySelectorAll('.upgrade-btn')[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
-    document.querySelectorAll('.upgrade-btn')[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
+    // 升级按钮禁用状态
+    const upgradeBtns = document.querySelectorAll('.upgrade-btn');
+    if (upgradeBtns[0]) upgradeBtns[0].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.clickLevel, 1.5));
+    if (upgradeBtns[1]) upgradeBtns[1].disabled = gameState.gold < Math.floor(10 * Math.pow(gameState.dpsLevel, 1.5));
+    if (upgradeBtns[2]) upgradeBtns[2].disabled = gameState.gold < Math.floor(15 * Math.pow(gameState.regenLevel, 1.5));
+    if (upgradeBtns[3]) upgradeBtns[3].disabled = gameState.gold < Math.floor(20 * Math.pow(gameState.hpLevel, 1.5));
+    
+    // 经验条显示
+    const expFill = document.getElementById('expFill');
+    const expText = document.getElementById('expText');
+    if (expFill) {
+        const expPercent = Math.min(100, (gameState.playerExp / gameState.playerExpNeeded) * 100);
+        expFill.style.width = expPercent + '%';
+    }
+    if (expText) {
+        expText.textContent = `${formatNumber(gameState.playerExp)} / ${formatNumber(gameState.playerExpNeeded)}`;
+    }
     
     // 更新详细数据面板（实时刷新）
     updateStatsPanel();
@@ -2488,6 +2683,12 @@ function loadGame() {
             gameState.rebirthPoints = gameState.petPoints;
             delete gameState.petPoints;
         }
+        // 新系统字段兼容
+        if (gameState.regenLevel === undefined) gameState.regenLevel = 0;
+        if (gameState.hpLevel === undefined) gameState.hpLevel = 0;
+        if (gameState.playerExp === undefined) gameState.playerExp = 0;
+        if (gameState.playerExpNeeded === undefined) gameState.playerExpNeeded = 100;
+        if (gameState.playerLevel === undefined) gameState.playerLevel = 1;
     }
 }
 

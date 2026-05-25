@@ -272,6 +272,38 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
+/* 经验条 */
+.player-exp-wrap {
+    height: 14px;
+    background: rgba(212,175,55,0.15);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 4px;
+}
+
+.player-exp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #b8860b 0%, #daa520 100%);
+    border-radius: 7px;
+    transition: width 0.4s ease;
+    box-shadow: inset 0 -1px 3px rgba(0,0,0,0.3);
+}
+
+.player-exp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    font-variant-numeric: tabular-nums;
+}
+
 .player-btns {
     display: flex;
     gap: 6px;

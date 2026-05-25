@@ -405,6 +405,10 @@ function attackBoss(event) {
             const _pet = petConfig.find(p => p.id === gameState.activePet);
             if (_pet && _pet.bonus.critDamage) critMultiplier += _pet.bonus.critDamage / 100;
         }
+        // 装备暴击伤害加成
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.critDamage) critMultiplier += item.stats.critDamage / 100;
+        });
         isCrit = true;
         effectType = 'crit';
     }
@@ -1205,6 +1209,10 @@ function startAutoAttack() {
                 const pet = petConfig.find(p => p.id === gameState.activePet);
                 if (pet && pet.bonus.critDamage) critMultiplier += pet.bonus.critDamage / 100;
             }
+            // 装备暴击伤害加成
+            Object.values(gameState.equipment).forEach(item => {
+                if (item && item.stats && item.stats.critDamage) critMultiplier += item.stats.critDamage / 100;
+            });
             isCrit = true;
         }
         
@@ -1272,9 +1280,8 @@ function startAutoAttack() {
             showDamageNumber(totalDamage, bx, by, 'crit');
         } else if (isBerserk) {
             showDamageNumber(totalDamage, bx, by, 'berserk');
-            } else if (effectType !== 'normal') {
-                showDamageNumber(totalDamage, bx, by, effectType);
-            }
+        } else if (effectType !== 'normal') {
+            showDamageNumber(totalDamage, bx, by, effectType);
         }
         
         // === 特效 ===
@@ -1679,8 +1686,8 @@ function renderInventory() {
         if (item.stats.attack) statsText += `⚔️+${item.stats.attack} `;
         if (item.stats.defense) statsText += `🛡️+${item.stats.defense} `;
         if (item.stats.maxHp) statsText += `❤️+${item.stats.maxHp} `;
-        if (item.stats.crit) statsText += `💥+${(item.stats.crit*100).toFixed(0)}% `;
-        if (item.stats.critDamage) statsText += `🔥+${(item.stats.critDamage*100).toFixed(0)}% `;
+        if (item.stats.crit) statsText += `💥+${item.stats.crit}% `;
+        if (item.stats.critDamage) statsText += `🔥+${item.stats.critDamage}% `;
         
         let mythicBadge = '';
         if (item.quality === 'mythic' && item.abilities && item.abilities.length > 0) {
@@ -1789,7 +1796,8 @@ function showItemDetail(item, index) {
             goldBonus: '金币加成'
         };
         const name = statNames[stat] || stat;
-        const value = stat.includes('Bonus') || stat.includes('Damage') || stat.includes('Reduce') || stat.includes('Resist') || stat === 'crit' ? `${item.stats[stat] * 100}%` : item.stats[stat];
+        const value = stat === 'crit' || stat === 'critDamage' ? `${item.stats[stat]}%` :
+              stat.includes('Bonus') || (stat.includes('Damage') && stat !== 'critDamage') || stat.includes('Reduce') || stat.includes('Resist') ? `${item.stats[stat] * 100}%` : item.stats[stat];
         statsHTML += `<div>${name}: +${value}</div>`;
     });
     

@@ -1149,6 +1149,7 @@ function updatePlayerHP() {
     
     // 显示每秒回血量
     const regenDisplay = document.getElementById('playerRegenDisplay');
+    const hpWrap = document.querySelector('.player-hp-wrap');
     if (regenDisplay) {
         let equipRegenTotal = 0;
         Object.values(gameState.equipment).forEach(item => {
@@ -1156,6 +1157,11 @@ function updatePlayerHP() {
         });
         const regenAmount = gameState.regenLevel * 5 + equipRegenTotal;
         regenDisplay.textContent = regenAmount > 0 ? ` +${regenAmount}/s` : '';
+        // 回血激活时添加绿色脉冲效果
+        if (hpWrap) {
+            if (regenAmount > 0) hpWrap.classList.add('regen-active');
+            else hpWrap.classList.remove('regen-active');
+        }
     }
 }
 
@@ -1521,8 +1527,10 @@ function upgradeRegen() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.regenLevel += actualUpgrades;
+        console.log('✅ 升级回血: regenLevel=' + gameState.regenLevel + ', 每秒回血=' + (gameState.regenLevel * 5));
         updateDisplay();
         updateStatsPanel();
+        updatePlayerHP(); // 更新HP条上的回血显示
         saveGame();
     }
 }

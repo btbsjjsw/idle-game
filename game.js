@@ -943,6 +943,7 @@ function startBossAttack() {
         if (gameState.playerCurrentHp > 0 && gameState.level > 0) {
             const eliteMult = gameState.eliteDmgMult || 1;
             const bossDamage = Math.floor((5 + gameState.level * 2) * eliteMult);
+            console.log('👊 Boss攻击! level=' + gameState.level + ' damage=' + bossDamage + ' hp=' + gameState.playerCurrentHp + '/' + gameState.playerMaxHp);
             
             // ===== 精英Boss能力效果 =====
             const abilities = gameState.eliteAbilities || [];
@@ -984,6 +985,9 @@ function startBossAttack() {
                     if (gameState.artifacts.stoneSkin > 0) damageReduce *= (1 + gameState.artifacts.stoneSkin * 0.1);
                     
                     finalDamage = Math.max(1, finalDamage - damageReduce * 0.5);
+                    // 保证每击至少造成最大生命值2%的伤害，避免高防御时完全不掉血
+                    const minDmg = Math.max(1, Math.floor(gameState.playerMaxHp * 0.02));
+                    finalDamage = Math.max(finalDamage, minDmg);
                     
                     // 荆棘反弹伤害（玩家对Boss）
                     if (gameState.artifacts.thorns > 0) {
@@ -1014,6 +1018,8 @@ function startBossAttack() {
                             showDamageNumber(finalDamage, rect.left + rect.width / 2, rect.top + 20, 'player');
                         }
                     }
+                    
+                    console.log('❤️ 勇者受伤! finalDmg=' + finalDamage + ' → hp=' + gameState.playerCurrentHp + '/' + gameState.playerMaxHp);
                     
                     // 玩家HP条红色闪烁
                     const hpFill = document.getElementById('playerHpFill');

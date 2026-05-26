@@ -205,13 +205,13 @@ const equipmentConfig = {
         {name: '神话项链', icon: '🌟', quality: 'mythic', stats: {maxHp: 30000, defense: 2500, regen: 100, allResist: 50}}
     ],
     boots: [
-        {name: '草鞋', icon: '🥿', quality: 'common', stats: {moveSpeed: 10, dodge: 3}},
-        {name: '布鞋', icon: '👟', quality: 'common', stats: {moveSpeed: 20, dodge: 5}},
-        {name: '皮靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 50, defense: 50, dodge: 10}},
-        {name: '钢靴', icon: '👢', quality: 'rare', stats: {moveSpeed: 80, defense: 100, dodge: 15}},
-        {name: '魔法靴', icon: '🔮', quality: 'epic', stats: {moveSpeed: 120, defense: 200, dodge: 25}},
-        {name: '传说靴', icon: '✨', quality: 'legendary', stats: {moveSpeed: 200, defense: 400, dodge: 40, crit: 20}},
-        {name: '神话靴', icon: '🌟', quality: 'mythic', stats: {moveSpeed: 500, defense: 800, dodge: 80, crit: 50, goldBonus: 0.3}}
+        {name: '草鞋', icon: '🥿', quality: 'common', stats: {dodge: 5}},
+        {name: '布鞋', icon: '👟', quality: 'common', stats: {dodge: 8, crit: 3}},
+        {name: '皮靴', icon: '👢', quality: 'rare', stats: {defense: 50, dodge: 15}},
+        {name: '钢靴', icon: '👢', quality: 'rare', stats: {defense: 100, dodge: 18}},
+        {name: '魔法靴', icon: '🔮', quality: 'epic', stats: {defense: 200, dodge: 30}},
+        {name: '传说靴', icon: '✨', quality: 'legendary', stats: {defense: 400, dodge: 50, crit: 20}},
+        {name: '神话靴', icon: '🌟', quality: 'mythic', stats: {defense: 800, dodge: 100, crit: 50, goldBonus: 0.3}}
     ]
 };
 
@@ -354,6 +354,13 @@ function calculateAttack() {
         if (item && item.stats.attack) attack += item.stats.attack;
     });
     
+    // 装备全伤害加成
+    let equipAllDmg = 0;
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats.allDamage) equipAllDmg += item.stats.allDamage;
+    });
+    if (equipAllDmg > 0) attack *= (1 + equipAllDmg / 100);
+    
     return attack;
 }
 
@@ -387,6 +394,7 @@ function attackBoss(event) {
     let hits = 1;
     if (gameState.artifacts.attackSpeed > 0) hits += Math.floor(gameState.artifacts.attackSpeed * 0.1);
     if (gameState.artifacts.multiHit > 0) hits += gameState.artifacts.multiHit;
+    if (gameState.artifacts.autoClick > 0) hits += gameState.artifacts.autoClick;
     
     // 连击
     if (gameState.artifacts.combo > 0) {
@@ -435,6 +443,13 @@ function attackBoss(event) {
         damage *= Math.pow(2, gameState.artifacts.lightning);
         hasLightning = true;
     }
+    
+    // 装备元素伤害（fireDamage/iceDamage/lightningDamage）
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats && item.stats.fireDamage) { damage *= (1 + item.stats.fireDamage / 100); hasFire = true; }
+        if (item && item.stats && item.stats.iceDamage) { damage *= (1 + item.stats.iceDamage / 100); hasIce = true; }
+        if (item && item.stats && item.stats.lightningDamage) { damage *= (1 + item.stats.lightningDamage / 100); hasLightning = true; }
+    });
     
     // 狂暴之斧
     let isBerserk = false;
@@ -806,6 +821,13 @@ function killBoss() {
         if (pet && pet.bonus.gold) finalGold *= (1 + pet.bonus.gold / 100);
     }
     
+    // 装备金币加成
+    let equipGoldBonus = 0;
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats && item.stats.goldBonus) equipGoldBonus += item.stats.goldBonus * 100;
+    });
+    if (equipGoldBonus > 0) finalGold *= (1 + equipGoldBonus / 100);
+    
     // 击杀爆炸特效
     if (gameState.artifacts.explosion > 0) {
         createExplosionEffect();
@@ -981,7 +1003,16 @@ function startBossAttack() {
                     damageReduce += gameState.defenseLevel * 2;
                     Object.values(gameState.equipment).forEach(item => {
                         if (item && item.stats.defense) damageReduce += item.stats.defense;
+                        if (item && item.stats.damageReduce) damageReduce += item.stats.damageReduce;
                     });
+                    // 装备抗性（元素抗性 + 全抗性）
+                    let equipResist = 0;
+                    Object.values(gameState.equipment).forEach(item => {
+                        if (item && item.stats.fireResist) equipResist += item.stats.fireResist;
+                        if (item && item.stats.iceResist) equipResist += item.stats.iceResist;
+                        if (item && item.stats.allResist) equipResist += item.stats.allResist;
+                    });
+                    if (equipResist > 0) damageReduce += equipResist * 0.5;
                     if (gameState.artifacts.stoneSkin > 0) damageReduce *= (1 + gameState.artifacts.stoneSkin * 0.1);
                     
                     finalDamage = Math.max(1, finalDamage - damageReduce * 0.5);
@@ -1528,8 +1559,10 @@ function upgradeDefense() {
 
 // 自动攻击（自动点击）
 function startAutoAttack() {
-    // 动态间隔：dpsLevel越高，攻击越快，最快100ms一次
-    const interval = Math.max(100, Math.floor(1000 / (1 + gameState.dpsLevel * 0.3)));
+    // 动态间隔：dpsLevel越高，攻击越快，最快50ms一次
+    // autoClick神器：每级提升50%攻速
+    const autoClickMult = 1 + (gameState.artifacts.autoClick || 0) * 0.5;
+    const interval = Math.max(50, Math.floor(1000 / (autoClickMult * (1 + gameState.dpsLevel * 0.3))));
     safeInterval('autoAttack', () => {
         if (gameState.playerCurrentHp <= 0) return;
         
@@ -1541,6 +1574,7 @@ function startAutoAttack() {
         if (gameState.artifacts.multiHit > 0) hits += gameState.artifacts.multiHit;
         if (gameState.artifacts.combo > 0) hits += gameState.artifacts.combo * 0.1;
         if (gameState.artifacts.attackSpeed > 0) hits += Math.floor(gameState.artifacts.attackSpeed * 0.1);
+        if (gameState.artifacts.autoClick > 0) hits += gameState.artifacts.autoClick;
         
         // === 计算暴击 ===
         let critMultiplier = 1;
@@ -1578,6 +1612,12 @@ function startAutoAttack() {
         if (gameState.artifacts.allDamage > 0) {
             baseDamage *= (1 + gameState.artifacts.allDamage * 0.5);
         }
+        // 装备元素伤害
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.fireDamage) { baseDamage *= (1 + item.stats.fireDamage / 100); effectType = 'fire'; }
+            if (item && item.stats && item.stats.iceDamage) { baseDamage *= (1 + item.stats.iceDamage / 100); if (effectType === 'normal' || effectType === 'fire') {}; else if (effectType !== 'lightning') effectType = 'ice'; }
+            if (item && item.stats && item.stats.lightningDamage) { baseDamage *= (1 + item.stats.lightningDamage / 100); if (effectType !== 'fire') effectType = 'lightning'; }
+        });
         // Berserk 低血量增伤
         let isBerserk = false;
         if (gameState.artifacts.berserk > 0 && gameState.playerCurrentHp < gameState.playerMaxHp * 0.3) {
@@ -2227,7 +2267,6 @@ function showItemDetail(item, index) {
             allResist: '全抗性',
             damageReduce: '伤害减免',
             regen: '生命回复',
-            moveSpeed: '移动速度',
             dodge: '闪避率',
             goldBonus: '金币加成'
         };

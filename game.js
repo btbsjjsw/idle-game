@@ -484,6 +484,10 @@ function attackBoss(event) {
     // 金币加成（受金币磁体影响）
     let goldMultiplier = 1;
     if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+    // 装备金币加成
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats && item.stats.goldBonus) goldMultiplier *= (1 + item.stats.goldBonus / 100);
+    });
     
     // 每点伤害给1金币
     gameState.gold += Math.floor(totalDamageDealt * goldMultiplier);
@@ -547,8 +551,13 @@ function attackBoss(event) {
     }
     
     // === 吸血效果 ===
-    if (gameState.artifacts.lifesteal > 0) {
-        const lifestealAmount = Math.floor(totalDamageDealt * 0.05 * gameState.artifacts.lifesteal);
+    let equipLifesteal = 0;
+    Object.values(gameState.equipment).forEach(item => {
+        if (item && item.stats && item.stats.lifesteal) equipLifesteal += item.stats.lifesteal;
+    });
+    const totalLifesteal = (gameState.artifacts.lifesteal || 0) + equipLifesteal;
+    if (totalLifesteal > 0) {
+        const lifestealAmount = Math.floor(totalDamageDealt * 0.05 * totalLifesteal);
         if (lifestealAmount > 0) {
             gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
             updatePlayerHP();
@@ -824,7 +833,7 @@ function killBoss() {
     // 装备金币加成
     let equipGoldBonus = 0;
     Object.values(gameState.equipment).forEach(item => {
-        if (item && item.stats && item.stats.goldBonus) equipGoldBonus += item.stats.goldBonus * 100;
+        if (item && item.stats && item.stats.goldBonus) equipGoldBonus += item.stats.goldBonus;
     });
     if (equipGoldBonus > 0) finalGold *= (1 + equipGoldBonus / 100);
     
@@ -1615,8 +1624,8 @@ function startAutoAttack() {
         // 装备元素伤害
         Object.values(gameState.equipment).forEach(item => {
             if (item && item.stats && item.stats.fireDamage) { baseDamage *= (1 + item.stats.fireDamage / 100); effectType = 'fire'; }
-            if (item && item.stats && item.stats.iceDamage) { baseDamage *= (1 + item.stats.iceDamage / 100); if (effectType === 'normal' || effectType === 'fire') {}; else if (effectType !== 'lightning') effectType = 'ice'; }
             if (item && item.stats && item.stats.lightningDamage) { baseDamage *= (1 + item.stats.lightningDamage / 100); if (effectType !== 'fire') effectType = 'lightning'; }
+            if (item && item.stats && item.stats.iceDamage) { baseDamage *= (1 + item.stats.iceDamage / 100); if (effectType !== 'fire' && effectType !== 'lightning') effectType = 'ice'; }
         });
         // Berserk 低血量增伤
         let isBerserk = false;
@@ -1661,6 +1670,10 @@ function startAutoAttack() {
         // === 金币 ===
         let goldMultiplier = 1;
         if (gameState.artifacts.goldMagnet > 0) goldMultiplier *= Math.pow(1.5, gameState.artifacts.goldMagnet);
+        // 装备金币加成
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.goldBonus) goldMultiplier *= (1 + item.stats.goldBonus / 100);
+        });
         gameState.gold += Math.floor(totalDamage * goldMultiplier);
         
         // === 记录实时DPS + 显示伤害数字 ===
@@ -1688,8 +1701,13 @@ function startAutoAttack() {
         if (chainDamage > 0) createChainLightningEffect();
         
         // === 吸血 ===
-        if (gameState.artifacts.lifesteal > 0) {
-            const lifestealAmount = Math.floor(totalDamage * 0.05 * gameState.artifacts.lifesteal);
+        let equipLifesteal = 0;
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.lifesteal) equipLifesteal += item.stats.lifesteal;
+        });
+        const totalLifesteal = (gameState.artifacts.lifesteal || 0) + equipLifesteal;
+        if (totalLifesteal > 0) {
+            const lifestealAmount = Math.floor(totalDamage * 0.05 * totalLifesteal);
             if (lifestealAmount > 0) {
                 gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + lifestealAmount);
                 updatePlayerHP();
@@ -1833,10 +1851,15 @@ function showPoisonDamage(damage) {
 // ===== 回血系统 =====
 function startRegen() {
     safeInterval('regen', () => {
-        if (gameState.playerCurrentHp > 0 && gameState.playerCurrentHp < gameState.playerMaxHp && gameState.regenLevel > 0) {
-            // 每秒回复：regenLevel * 5 HP
-            const regenAmount = gameState.regenLevel * 5;
-            gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + regenAmount);
+        // 装备回血加成
+        let equipRegen = 0;
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.regen) equipRegen += item.stats.regen;
+        });
+        const regenFromUpgrade = gameState.regenLevel * 5;
+        const totalRegen = regenFromUpgrade + equipRegen;
+        if (gameState.playerCurrentHp > 0 && gameState.playerCurrentHp < gameState.playerMaxHp && totalRegen > 0) {
+            gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + totalRegen);
             updatePlayerHP();
         }
     }, 1000);

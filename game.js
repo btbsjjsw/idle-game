@@ -713,6 +713,12 @@ function showDamageNumber(damage, x, y, effectType) {
             dmgFloat.style.textShadow = '0 0 8px #ff69b4';
             dmgFloat.textContent = '🌹反弹 ' + dmgFloat.textContent;
             break;
+        case 'regen':
+            dmgFloat.style.color = '#00ff88';
+            dmgFloat.style.fontSize = '1em';
+            dmgFloat.style.textShadow = '0 0 6px #00ff88';
+            dmgFloat.textContent = '💚+' + dmgFloat.textContent;
+            break;
         default:
             dmgFloat.style.color = '#ffffff';
             dmgFloat.style.fontSize = scaleFont + 'em';
@@ -970,6 +976,7 @@ function showDropNotification(item) {
 
 // Boss反击系统
 function startBossAttack() {
+    // 攻击频率：每1.5秒一次（更频繁让玩家感受到威胁）
     safeInterval('bossAttack', () => {
         if (gameState.playerCurrentHp > 0 && gameState.level > 0) {
             const eliteMult = gameState.eliteDmgMult || 1;
@@ -1061,7 +1068,9 @@ function startBossAttack() {
                     
                     console.log('❤️ 勇者受伤! finalDmg=' + finalDamage + ' → hp=' + gameState.playerCurrentHp + '/' + gameState.playerMaxHp);
                     
-                    // 玩家HP条红色闪烁
+                    // 画面震动 + 红色闪屏
+                    screenShake(150);
+                    redFlash();
                     const hpFill = document.getElementById('playerHpFill');
                     if (hpFill) {
                         hpFill.style.filter = 'brightness(1.8)';
@@ -1077,7 +1086,27 @@ function startBossAttack() {
                 }
             }
         }
-    }, 3000);
+    }, 1500);
+}
+
+// 画面震动效果
+function screenShake(duration = 200) {
+    const gameArea = document.getElementById('gameArea') || document.body;
+    gameArea.style.transition = 'transform ' + (duration/1000) + 's ease-out';
+    const x = (Math.random() - 0.5) * 8;
+    const y = (Math.random() - 0.5) * 8;
+    gameArea.style.transform = `translate(${x}px, ${y}px)`;
+    setTimeout(() => {
+        gameArea.style.transform = 'translate(0, 0)';
+    }, duration);
+}
+
+// 玩家受伤红色闪屏
+function redFlash() {
+    const flash = document.createElement('div');
+    flash.className = 'red-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 500);
 }
 
 // 显示荆棘反弹伤害
@@ -1121,7 +1150,11 @@ function updatePlayerHP() {
     // 显示每秒回血量
     const regenDisplay = document.getElementById('playerRegenDisplay');
     if (regenDisplay) {
-        const regenAmount = gameState.regenLevel * 5;
+        let equipRegenTotal = 0;
+        Object.values(gameState.equipment).forEach(item => {
+            if (item && item.stats && item.stats.regen) equipRegenTotal += item.stats.regen;
+        });
+        const regenAmount = gameState.regenLevel * 5 + equipRegenTotal;
         regenDisplay.textContent = regenAmount > 0 ? ` +${regenAmount}/s` : '';
     }
 }
@@ -1859,8 +1892,16 @@ function startRegen() {
         const regenFromUpgrade = gameState.regenLevel * 5;
         const totalRegen = regenFromUpgrade + equipRegen;
         if (gameState.playerCurrentHp > 0 && gameState.playerCurrentHp < gameState.playerMaxHp && totalRegen > 0) {
+            const healed = Math.min(totalRegen, gameState.playerMaxHp - gameState.playerCurrentHp);
             gameState.playerCurrentHp = Math.min(gameState.playerMaxHp, gameState.playerCurrentHp + totalRegen);
             updatePlayerHP();
+            // 显示绿色回血数字
+            const playerHpWrap = document.querySelector('.player-hp-wrap');
+            if (playerHpWrap && healed > 0) {
+                const rect = playerHpWrap.getBoundingClientRect();
+                showDamageNumber(healed, rect.left + rect.width / 2, rect.top + 10, 'regen');
+            }
+            console.log('💚 回血: +' + healed + ' → hp=' + gameState.playerCurrentHp + '/' + gameState.playerMaxHp + ' (regenLv=' + gameState.regenLevel + ', equip=' + equipRegen + ')');
         }
     }, 1000);
     

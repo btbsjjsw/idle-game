@@ -1,4 +1,4 @@
-﻿// 全局定时器（防止重生/重置后重复创建）
+// 全局定时器（防止重生/重置后重复创建）
 const _timers = {};
 function safeInterval(key, fn, ms) {
     if (_timers[key]) clearInterval(_timers[key]);
@@ -898,7 +898,7 @@ function dropEquipment(forcedDrop = false, qualityBoost = 0) {
             }
             
             gameState.inventory.push(item);
-            showDropNotification(item);
+            if (forcedDrop) showDropNotification(item);
         }
     }
 }
@@ -1265,7 +1265,6 @@ function upgradeClick() {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('click') : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -1286,12 +1285,9 @@ function upgradeClick() {
         gameState.gold -= totalCost;
         gameState.clickLevel += actualUpgrades;
         gameState.clickDamage = gameState.clickLevel;
-        showNotification(`⚔️ 点击伤害 +${actualUpgrades} (共 ${gameState.clickLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
         saveGame();
-    } else {
-        showNotification('金币不足!');
     }
 }
 
@@ -1303,7 +1299,6 @@ function upgradeDPS() {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('dps') : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -1326,12 +1321,9 @@ function upgradeDPS() {
         gameState.dps = gameState.dpsLevel;
         // 重新设置自动点击间隔
         startAutoAttack();
-        showNotification(`🤖 自动点击 +${actualUpgrades} (共 ${gameState.dpsLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
         saveGame();
-    } else {
-        showNotification('金币不足!');
     }
 }
 
@@ -1431,7 +1423,6 @@ function upgradeRegen() {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('regen') : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -1451,12 +1442,9 @@ function upgradeRegen() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.regenLevel += actualUpgrades;
-        showNotification(`❤️ 回血 +${actualUpgrades} (共 ${gameState.regenLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
         saveGame();
-    } else {
-        showNotification('金币不足!');
     }
 }
 
@@ -1467,7 +1455,6 @@ function upgradeHP() {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('hp') : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -1494,13 +1481,10 @@ function upgradeHP() {
         if (oldMaxHp > 0) {
             gameState.playerCurrentHp = Math.min(newMaxHp, Math.floor(gameState.playerCurrentHp * (newMaxHp / oldMaxHp)));
         }
-        showNotification(`🛡️ 血量 +${actualUpgrades} (共 ${gameState.hpLevel} 级)`);
         updateDisplay();
         updatePlayerHP();
         updateStatsPanel();
         saveGame();
-    } else {
-        showNotification('金币不足!');
     }
 }
 
@@ -1511,7 +1495,6 @@ function upgradeDefense() {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordable('defense') : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -1531,12 +1514,9 @@ function upgradeDefense() {
     if (actualUpgrades > 0) {
         gameState.gold -= totalCost;
         gameState.defenseLevel += actualUpgrades;
-        showNotification(`🛡️ 防御 +${actualUpgrades} (共 ${gameState.defenseLevel} 级)`);
         updateDisplay();
         updateStatsPanel();
         saveGame();
-    } else {
-        showNotification('金币不足!');
     }
 }
 
@@ -2065,7 +2045,6 @@ function upgradeArtifact(artifactId) {
     const maxUpgrades = multiplier === 'max' ? getMaxAffordableArtifact(artifact, level) : parseInt(multiplier);
     
     if (maxUpgrades <= 0) {
-        showNotification('金币不足!');
         return;
     }
     
@@ -2083,8 +2062,6 @@ function upgradeArtifact(artifactId) {
         updateDisplay();
         updatePlayerHP();
         saveGame();
-    } else {
-        showNotification('🔮 神器点不足!');
     }
 }
 
